@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import '../api/api_client.dart';
 import '../api/api_exception.dart';
 import '../api/auth_api_service.dart';
+import '../api/catalog_api_service.dart';
+import '../api/product_api_service.dart';
+import '../api/household_api_service.dart';
+import '../api/order_api_service.dart';
+import '../api/cashflow_api_service.dart';
+import '../api/settings_api_service.dart';
 import '../database/app_database.dart';
 import '../models/models.dart';
 import '../utils/formatters.dart';
@@ -11,6 +17,12 @@ class BusinessController extends ChangeNotifier {
   final LocalSqliteDatabase _db = LocalSqliteDatabase.instance;
   final ApiClient apiClient = ApiClient();
   late final AuthApiService authApi = AuthApiService(apiClient: apiClient);
+  late final CatalogApiService catalogApi = CatalogApiService(apiClient: apiClient);
+  late final ProductApiService productApi = ProductApiService(apiClient: apiClient);
+  late final HouseholdApiService householdApi = HouseholdApiService(apiClient: apiClient);
+  late final OrderApiService orderApi = OrderApiService(apiClient: apiClient);
+  late final CashflowApiService cashflowApi = CashflowApiService(apiClient: apiClient);
+  late final SettingsApiService settingsApi = SettingsApiService(apiClient: apiClient);
 
   UserModel? currentUser;
   bool get isAuthenticated => currentUser != null;
@@ -48,19 +60,44 @@ class BusinessController extends ChangeNotifier {
         apiClient.setAccessToken(token);
         try {
           currentUser = await authApi.getProfile();
+          // Đồng bộ dữ liệu mới nhất từ Backend API
+          final remoteCategories = await catalogApi.getCategories();
+          if (remoteCategories.isNotEmpty) categories = remoteCategories;
+
+          final remoteSuppliers = await catalogApi.getSuppliers();
+          if (remoteSuppliers.isNotEmpty) suppliers = remoteSuppliers;
+
+          final remoteProducts = await productApi.getProducts();
+          if (remoteProducts.isNotEmpty) products = remoteProducts;
+
+          final remoteHouseholds = await householdApi.getHouseholds();
+          if (remoteHouseholds.isNotEmpty) households = remoteHouseholds;
+
+          final remoteOrders = await orderApi.getOrders();
+          if (remoteOrders.isNotEmpty) orders = remoteOrders;
+
+          final remoteCash = await cashflowApi.getCashTransactions();
+          if (remoteCash.isNotEmpty) cashTransactions = remoteCash;
+
+          final remoteSettings = await settingsApi.getSettings();
+          storeConfig = remoteSettings;
         } catch (_) {
           currentUser = await _db.getActiveSessionUser();
         }
       } else {
         currentUser = await _db.getActiveSessionUser();
       }
-      storeConfig = await _db.loadStoreConfig();
-      categories = await _db.loadCategories();
-      suppliers = await _db.loadSuppliers();
-      products = await _db.loadProducts();
-      households = await _db.loadHouseholds();
-      orders = await _db.loadOrders();
-      cashTransactions = await _db.loadCashTransactions();
+
+      if (categories.isEmpty) categories = await _db.loadCategories();
+      if (suppliers.isEmpty) suppliers = await _db.loadSuppliers();
+      if (products.isEmpty) products = await _db.loadProducts();
+      if (households.isEmpty) households = await _db.loadHouseholds();
+      if (orders.isEmpty) orders = await _db.loadOrders();
+      if (cashTransactions.isEmpty) cashTransactions = await _db.loadCashTransactions();
+      if (storeConfig.storeName == 'HỘ KINH DOANH CỦA TÔI') {
+        storeConfig = await _db.loadStoreConfig();
+      }
+
       for (final c in categories) {
         expandedNodeKeys.add('cat-${c.id}');
       }
@@ -473,7 +510,11 @@ class BusinessController extends ChangeNotifier {
   Future<void> updateStoreConfig(StoreConfig newConfig) async {
     storeConfig = newConfig;
     try {
-      await _db.saveStoreConfig(newConfig);
+      final updated = await settingsApi.updateSettings(newConfig);
+      storeConfig = updated;
+    } catch (_) {}
+    try {
+      await _db.saveStoreConfig(storeConfig);
     } catch (_) {}
     notifyListeners();
   }
@@ -485,44 +526,77 @@ class BusinessController extends ChangeNotifier {
     required String icon,
     int? parentId,
   }) async {
-    if (editId != null) {
-      final idx = categories.indexWhere((c) => c.id == editId);
-      if (idx != -1) {
-        final path = parentId != null ? '/$parentId/$editId/' : '/$editId/';
-        final updated = CategoryNode(
-          id: editId,
+    try {
+      if (editId != null) {
+        final updated = await catalogApi.updateCategory(
+          editId,
+          name: name,
+          icon: icon,
+          parentId: parentId,
+        );
+        final idx = categories.indexWhere((c) => c.id == editId);
+        if (idx != -1) categories[idx] = updated;
+        try {
+          await _db.upsertCategory(updated);
+        } catch (_) {}
+      } else {
+        final created = await catalogApi.createCategory(
+          name: name,
+          icon: icon,
+          parentId: parentId,
+        );
+        categories.add(created);
+        expandedNodeKeys.add('cat-${created.id}');
+        if (parentId != null) expandedNodeKeys.add('cat-$parentId');
+        selectedCategoryId = created.id;
+        try {
+          await _db.upsertCategory(created);
+        } catch (_) {}
+      }
+    } catch (_) {
+      // Dự phòng ngoại tuyến (Offline fallback)
+      if (editId != null) {
+        final idx = categories.indexWhere((c) => c.id == editId);
+        if (idx != -1) {
+          final path = parentId != null ? '/$parentId/$editId/' : '/$editId/';
+          final updated = CategoryNode(
+            id: editId,
+            parentId: parentId,
+            name: name,
+            icon: icon,
+            materializedPath: path,
+          );
+          categories[idx] = updated;
+          try {
+            await _db.upsertCategory(updated);
+          } catch (_) {}
+        }
+      } else {
+        final newId = DateTime.now().millisecondsSinceEpoch % 1000000;
+        final path = parentId != null ? '/$parentId/$newId/' : '/$newId/';
+        final created = CategoryNode(
+          id: newId,
           parentId: parentId,
           name: name,
           icon: icon,
           materializedPath: path,
         );
-        categories[idx] = updated;
+        categories.add(created);
+        expandedNodeKeys.add('cat-$newId');
+        if (parentId != null) expandedNodeKeys.add('cat-$parentId');
+        selectedCategoryId = newId;
         try {
-          await _db.upsertCategory(updated);
+          await _db.upsertCategory(created);
         } catch (_) {}
       }
-    } else {
-      final newId = DateTime.now().millisecondsSinceEpoch % 1000000;
-      final path = parentId != null ? '/$parentId/$newId/' : '/$newId/';
-      final created = CategoryNode(
-        id: newId,
-        parentId: parentId,
-        name: name,
-        icon: icon,
-        materializedPath: path,
-      );
-      categories.add(created);
-      expandedNodeKeys.add('cat-$newId');
-      if (parentId != null) expandedNodeKeys.add('cat-$parentId');
-      selectedCategoryId = newId;
-      try {
-        await _db.upsertCategory(created);
-      } catch (_) {}
     }
     notifyListeners();
   }
 
   Future<void> deleteCategory(int categoryId) async {
+    try {
+      await catalogApi.deleteCategory(categoryId);
+    } catch (_) {}
     final subtreeIds = getCategorySubtreeIds(categoryId);
     categories.removeWhere((c) => subtreeIds.contains(c.id));
     products.removeWhere((p) => subtreeIds.contains(p.categoryId));
@@ -552,41 +626,76 @@ class BusinessController extends ChangeNotifier {
     required int payableDebt,
     required List<int> categoryIds,
   }) async {
-    if (editId != null) {
-      final idx = suppliers.indexWhere((s) => s.id == editId);
-      if (idx != -1) {
-        final updated = suppliers[idx].copyWith(
+    try {
+      if (editId != null) {
+        final updated = await catalogApi.updateSupplier(
+          editId,
           name: name,
           phone: phone,
           address: address,
           payableDebt: payableDebt,
           categoryIds: categoryIds,
         );
-        suppliers[idx] = updated;
+        final idx = suppliers.indexWhere((s) => s.id == editId);
+        if (idx != -1) suppliers[idx] = updated;
         try {
           await _db.upsertSupplier(updated);
         } catch (_) {}
+      } else {
+        final created = await catalogApi.createSupplier(
+          name: name,
+          phone: phone,
+          address: address,
+          payableDebt: payableDebt,
+          categoryIds: categoryIds,
+        );
+        suppliers.add(created);
+        expandedNodeKeys.add('sup-${created.id}');
+        try {
+          await _db.upsertSupplier(created);
+        } catch (_) {}
       }
-    } else {
-      final newId = DateTime.now().millisecondsSinceEpoch % 1000000;
-      final created = SupplierModel(
-        id: newId,
-        name: name,
-        phone: phone,
-        address: address,
-        payableDebt: payableDebt,
-        categoryIds: categoryIds,
-      );
-      suppliers.add(created);
-      expandedNodeKeys.add('sup-$newId');
-      try {
-        await _db.upsertSupplier(created);
-      } catch (_) {}
+    } catch (_) {
+      // Dự phòng ngoại tuyến
+      if (editId != null) {
+        final idx = suppliers.indexWhere((s) => s.id == editId);
+        if (idx != -1) {
+          final updated = suppliers[idx].copyWith(
+            name: name,
+            phone: phone,
+            address: address,
+            payableDebt: payableDebt,
+            categoryIds: categoryIds,
+          );
+          suppliers[idx] = updated;
+          try {
+            await _db.upsertSupplier(updated);
+          } catch (_) {}
+        }
+      } else {
+        final newId = DateTime.now().millisecondsSinceEpoch % 1000000;
+        final created = SupplierModel(
+          id: newId,
+          name: name,
+          phone: phone,
+          address: address,
+          payableDebt: payableDebt,
+          categoryIds: categoryIds,
+        );
+        suppliers.add(created);
+        expandedNodeKeys.add('sup-$newId');
+        try {
+          await _db.upsertSupplier(created);
+        } catch (_) {}
+      }
     }
     notifyListeners();
   }
 
   Future<void> deleteSupplier(int supplierId) async {
+    try {
+      await catalogApi.deleteSupplier(supplierId);
+    } catch (_) {}
     suppliers.removeWhere((s) => s.id == supplierId);
     if (selectedSupplierId == supplierId) selectedSupplierId = null;
     try {
@@ -647,60 +756,64 @@ class BusinessController extends ChangeNotifier {
       }
     }
 
-    if (editId != null) {
-      final idx = products.indexWhere((p) => p.id == editId);
-      if (idx != -1) {
-        final updated = products[idx].copyWith(
-          name: name,
-          sku: sku,
-          categoryId: resolvedCatId,
-          primarySupplierId: primarySupplierId,
-          supplierIds: mergedSups.toList(),
-          baseUnit: baseUnit,
-          stockQty: stockQty,
-          costPrice: costPrice,
-          retailPrice: retailPrice,
-          packUnitName: packUnitName,
-          packRate: packUnitName.isNotEmpty ? packRate : 1.0,
-          packPrice: packPrice,
-          trackReturnableShell: trackReturnableShell,
-          specNote: specNote,
-          imagePath: imagePath,
-        );
-        products[idx] = updated;
+    final model = ProductModel(
+      id: editId ?? (DateTime.now().millisecondsSinceEpoch % 1000000 + 7),
+      sku: sku.isEmpty ? 'SP-${DateTime.now().millisecondsSinceEpoch % 1000000}' : sku,
+      name: name,
+      categoryId: resolvedCatId,
+      primarySupplierId: primarySupplierId,
+      supplierIds: mergedSups.toList(),
+      baseUnit: baseUnit,
+      stockQty: stockQty,
+      costPrice: costPrice,
+      retailPrice: retailPrice,
+      packUnitName: packUnitName,
+      packRate: packUnitName.isNotEmpty ? packRate : 1.0,
+      packPrice: packPrice,
+      trackReturnableShell: trackReturnableShell,
+      specNote: specNote,
+      imagePath: imagePath,
+    );
+
+    try {
+      if (editId != null) {
+        final updated = await productApi.updateProduct(editId, model);
+        final idx = products.indexWhere((p) => p.id == editId);
+        if (idx != -1) products[idx] = updated;
         try {
           await _db.upsertProduct(updated);
         } catch (_) {}
+      } else {
+        final created = await productApi.createProduct(model);
+        products.insert(0, created);
+        try {
+          await _db.upsertProduct(created);
+        } catch (_) {}
       }
-    } else {
-      final newId = DateTime.now().millisecondsSinceEpoch % 1000000 + 7;
-      final created = ProductModel(
-        id: newId,
-        sku: sku.isEmpty ? 'SP-$newId' : sku,
-        name: name,
-        categoryId: resolvedCatId,
-        primarySupplierId: primarySupplierId,
-        supplierIds: mergedSups.toList(),
-        baseUnit: baseUnit,
-        stockQty: stockQty,
-        costPrice: costPrice,
-        retailPrice: retailPrice,
-        packUnitName: packUnitName,
-        packRate: packUnitName.isNotEmpty ? packRate : 1.0,
-        packPrice: packPrice,
-        trackReturnableShell: trackReturnableShell,
-        specNote: specNote,
-        imagePath: imagePath,
-      );
-      products.insert(0, created);
-      try {
-        await _db.upsertProduct(created);
-      } catch (_) {}
+    } catch (_) {
+      // Dự phòng ngoại tuyến
+      if (editId != null) {
+        final idx = products.indexWhere((p) => p.id == editId);
+        if (idx != -1) {
+          products[idx] = model;
+          try {
+            await _db.upsertProduct(model);
+          } catch (_) {}
+        }
+      } else {
+        products.insert(0, model);
+        try {
+          await _db.upsertProduct(model);
+        } catch (_) {}
+      }
     }
     notifyListeners();
   }
 
   Future<void> deleteProduct(int productId) async {
+    try {
+      await productApi.deleteProduct(productId);
+    } catch (_) {}
     products.removeWhere((p) => p.id == productId);
     posCart.removeWhere((item) => item.product.id == productId);
     try {
@@ -792,6 +905,32 @@ class BusinessController extends ChangeNotifier {
     int totalCogs = 0;
     final summaryParts = <String>[];
     int primaryRootCatId = 0;
+
+    // 1. Thử gửi đơn hàng lên Backend API
+    try {
+      final itemsPayload = posCart.map((item) => {
+        'productId': item.product.id,
+        'quantity': item.qty,
+        'isPack': item.usePackUnit,
+        'price': item.customUnitPrice,
+      }).toList();
+
+      await orderApi.checkout(
+        orderType: posOrderType,
+        items: itemsPayload,
+        discount: discount,
+        paidAmount: paid,
+        paymentMethod: paymentMethod,
+        householdId: householdId,
+        buyerMemberName: buyerMemberName,
+        supplierId: supplierId,
+        containerOwedDelta: containerOwedDelta,
+        note: note,
+        dateStr: dateStr,
+      );
+    } catch (_) {
+      // Tiếp tục thực hiện lưu trữ nội bộ (Offline-first fallback)
+    }
 
     for (int i = 0; i < posCart.length; i++) {
       final item = posCart[i];
@@ -934,10 +1073,102 @@ class BusinessController extends ChangeNotifier {
     required List<String> extraMembers,
   }) async {
     final allMembers = <String>['$headName (Chủ hộ)', ...extraMembers];
-    if (editId != null) {
-      final idx = households.indexWhere((h) => h.id == editId);
-      if (idx != -1) {
-        households[idx] = households[idx].copyWith(
+    final model = HouseholdModel(
+      id: editId ?? (DateTime.now().millisecondsSinceEpoch % 1000000),
+      name: name,
+      headName: headName,
+      phone: phone,
+      address: address,
+      creditLimit: creditLimit,
+      currentDebt: initDebt,
+      containerOwed: initContainerOwed,
+      members: allMembers,
+    );
+
+    try {
+      if (editId != null) {
+        final updated = await householdApi.updateHousehold(editId, model);
+        final idx = households.indexWhere((h) => h.id == editId);
+        if (idx != -1) {
+          households[idx] = households[idx].copyWith(
+            name: updated.name,
+            headName: updated.headName,
+            phone: updated.phone,
+            address: updated.address,
+            creditLimit: updated.creditLimit,
+            currentDebt: initDebt,
+            containerOwed: initContainerOwed,
+            members: updated.members,
+          );
+          try {
+            await _db.upsertHousehold(households[idx]);
+          } catch (_) {}
+        }
+      } else {
+        final created = await householdApi.createHousehold(model);
+        final initLedger = <DebtLedgerEntry>[];
+        if (initDebt > 0) {
+          final entry = DebtLedgerEntry(
+            id: DateTime.now().millisecondsSinceEpoch % 1000000 + 1,
+            householdId: created.id,
+            dateStr: '${AppFormatters.todayIsoDate()} 08:00',
+            actorName: headName,
+            description: 'Dư nợ đầu kỳ khi khởi tạo sổ',
+            changeAmount: initDebt,
+            balanceAfter: initDebt,
+          );
+          initLedger.add(entry);
+        }
+        final finalCreated = created.copyWith(
+          currentDebt: initDebt,
+          containerOwed: initContainerOwed,
+          ledger: initLedger,
+        );
+        households.insert(0, finalCreated);
+        selectedHouseholdId = finalCreated.id;
+        try {
+          await _db.upsertHousehold(finalCreated);
+          for (final l in initLedger) {
+            await _db.insertDebtLedger(l);
+          }
+        } catch (_) {}
+      }
+    } catch (_) {
+      // Ngoại tuyến (offline-first fallback)
+      if (editId != null) {
+        final idx = households.indexWhere((h) => h.id == editId);
+        if (idx != -1) {
+          households[idx] = households[idx].copyWith(
+            name: name,
+            headName: headName,
+            phone: phone,
+            address: address,
+            creditLimit: creditLimit,
+            currentDebt: initDebt,
+            containerOwed: initContainerOwed,
+            members: allMembers,
+          );
+          try {
+            await _db.upsertHousehold(households[idx]);
+          } catch (_) {}
+        }
+      } else {
+        final newId = DateTime.now().millisecondsSinceEpoch % 1000000;
+        final initLedger = <DebtLedgerEntry>[];
+        if (initDebt > 0) {
+          final entry = DebtLedgerEntry(
+            id: newId + 1,
+            householdId: newId,
+            dateStr: '${AppFormatters.todayIsoDate()} 08:00',
+            actorName: headName,
+            description: 'Dư nợ đầu kỳ khi khởi tạo sổ',
+            changeAmount: initDebt,
+            balanceAfter: initDebt,
+          );
+          initLedger.add(entry);
+        }
+        final created = HouseholdModel(
+          id: newId,
           name: name,
           headName: headName,
           phone: phone,
@@ -946,46 +1177,17 @@ class BusinessController extends ChangeNotifier {
           currentDebt: initDebt,
           containerOwed: initContainerOwed,
           members: allMembers,
+          ledger: initLedger,
         );
+        households.insert(0, created);
+        selectedHouseholdId = newId;
         try {
-          await _db.upsertHousehold(households[idx]);
+          await _db.upsertHousehold(created);
+          for (final l in initLedger) {
+            await _db.insertDebtLedger(l);
+          }
         } catch (_) {}
       }
-    } else {
-      final newId = DateTime.now().millisecondsSinceEpoch % 1000000;
-      final initLedger = <DebtLedgerEntry>[];
-      if (initDebt > 0) {
-        final entry = DebtLedgerEntry(
-          id: newId + 1,
-          householdId: newId,
-          dateStr: '${AppFormatters.todayIsoDate()} 08:00',
-          actorName: headName,
-          description: 'Dư nợ đầu kỳ khi khởi tạo sổ',
-          changeAmount: initDebt,
-          balanceAfter: initDebt,
-        );
-        initLedger.add(entry);
-      }
-      final created = HouseholdModel(
-        id: newId,
-        name: name,
-        headName: headName,
-        phone: phone,
-        address: address,
-        creditLimit: creditLimit,
-        currentDebt: initDebt,
-        containerOwed: initContainerOwed,
-        members: allMembers,
-        ledger: initLedger,
-      );
-      households.insert(0, created);
-      selectedHouseholdId = newId;
-      try {
-        await _db.upsertHousehold(created);
-        for (final l in initLedger) {
-          await _db.insertDebtLedger(l);
-        }
-      } catch (_) {}
     }
     notifyListeners();
   }
@@ -996,12 +1198,18 @@ class BusinessController extends ChangeNotifier {
     final updatedMembers = [...households[idx].members, memberName];
     households[idx] = households[idx].copyWith(members: updatedMembers);
     try {
+      await householdApi.updateHousehold(householdId, households[idx]);
+    } catch (_) {}
+    try {
       await _db.upsertHousehold(households[idx]);
     } catch (_) {}
     notifyListeners();
   }
 
   Future<void> deleteHousehold(int householdId) async {
+    try {
+      await householdApi.deleteHousehold(householdId);
+    } catch (_) {}
     households.removeWhere((h) => h.id == householdId);
     if (selectedHouseholdId == householdId) {
       selectedHouseholdId = households.isNotEmpty ? households.first.id : null;
@@ -1022,6 +1230,18 @@ class BusinessController extends ChangeNotifier {
     final idx = households.indexWhere((h) => h.id == householdId);
     if (idx == -1) return;
     final hh = households[idx];
+
+    try {
+      await householdApi.collectDebt(
+        householdId,
+        amount: amount,
+        containersReturned: containersReturned,
+        actorName: hh.headName,
+        method: method,
+        note: note,
+      );
+    } catch (_) {}
+
     final nowId = DateTime.now().millisecondsSinceEpoch % 1000000;
     final fullDate = '${AppFormatters.todayIsoDate()} ${AppFormatters.currentTimeHm()}';
 
@@ -1086,16 +1306,39 @@ class BusinessController extends ChangeNotifier {
       final sIdx = suppliers.indexWhere((s) => s.id == supplierId);
       if (sIdx != -1) {
         final sup = suppliers[sIdx];
-        suppliers[sIdx] = sup.copyWith(
-          payableDebt: (sup.payableDebt - amount).clamp(0, 999999999),
-        );
         if (resolvedNote.isEmpty) {
           resolvedNote = 'Trả nợ tiền hàng cho ${sup.name}';
         }
         try {
+          await catalogApi.paySupplierDebt(
+            supplierId,
+            amount: amount,
+            note: resolvedNote,
+            paymentMethod: method,
+          );
+        } catch (_) {}
+
+        suppliers[sIdx] = sup.copyWith(
+          payableDebt: (sup.payableDebt - amount).clamp(0, 999999999),
+        );
+        try {
           await _db.upsertSupplier(suppliers[sIdx]);
         } catch (_) {}
       }
+    } else {
+      try {
+        await cashflowApi.createCashTransaction(CashTxModel(
+          id: 0,
+          dateStr: fullDate,
+          flow: flow,
+          category: category,
+          method: method,
+          amount: amount,
+          note: resolvedNote.isEmpty
+              ? (flow == 'IN' ? 'Phiếu thu bổ sung' : 'Chi phí vận hành cửa hàng')
+              : resolvedNote,
+        ));
+      } catch (_) {}
     }
 
     final tx = CashTxModel(
@@ -1114,6 +1357,70 @@ class BusinessController extends ChangeNotifier {
       await _db.insertCashTransaction(tx);
     } catch (_) {}
     notifyListeners();
+  }
+
+  // Điều chỉnh tồn kho qua API và đồng bộ
+  Future<void> adjustProductStock(
+    int productId, {
+    required String operation, // 'ADD', 'SUBTRACT', 'SET'
+    required double quantity,
+    required String reason,
+    String? note,
+  }) async {
+    try {
+      await productApi.adjustStock(
+        productId,
+        operation: operation,
+        quantity: quantity,
+        reason: reason,
+        note: note,
+      );
+    } catch (_) {}
+
+    final idx = products.indexWhere((p) => p.id == productId);
+    if (idx != -1) {
+      final p = products[idx];
+      double nextStock = p.stockQty;
+      if (operation == 'ADD') {
+        nextStock += quantity;
+      } else if (operation == 'SUBTRACT') {
+        nextStock = (nextStock - quantity).clamp(0.0, 9999999.0);
+      } else if (operation == 'SET') {
+        nextStock = quantity;
+      }
+      products[idx] = p.copyWith(stockQty: nextStock);
+      try {
+        await _db.upsertProduct(products[idx]);
+      } catch (_) {}
+      notifyListeners();
+    }
+  }
+
+  // Làm mới toàn bộ dữ liệu từ server
+  Future<void> refreshData() async {
+    try {
+      final remoteCategories = await catalogApi.getCategories();
+      if (remoteCategories.isNotEmpty) categories = remoteCategories;
+
+      final remoteSuppliers = await catalogApi.getSuppliers();
+      if (remoteSuppliers.isNotEmpty) suppliers = remoteSuppliers;
+
+      final remoteProducts = await productApi.getProducts();
+      if (remoteProducts.isNotEmpty) products = remoteProducts;
+
+      final remoteHouseholds = await householdApi.getHouseholds();
+      if (remoteHouseholds.isNotEmpty) households = remoteHouseholds;
+
+      final remoteOrders = await orderApi.getOrders();
+      if (remoteOrders.isNotEmpty) orders = remoteOrders;
+
+      final remoteCash = await cashflowApi.getCashTransactions();
+      if (remoteCash.isNotEmpty) cashTransactions = remoteCash;
+
+      final remoteSettings = await settingsApi.getSettings();
+      storeConfig = remoteSettings;
+      notifyListeners();
+    } catch (_) {}
   }
 
   Future<void> resetAllToBlank() async {

@@ -6,7 +6,10 @@ import 'api_constants.dart';
 import 'api_exception.dart';
 
 class ApiClient {
+  final http.Client _client;
   String? _accessToken;
+
+  ApiClient({http.Client? httpClient}) : _client = httpClient ?? http.Client();
 
   String? get accessToken => _accessToken;
 
@@ -42,7 +45,7 @@ class ApiClient {
   Future<dynamic> get(String endpoint, {Map<String, dynamic>? queryParams}) async {
     try {
       final uri = _buildUri(endpoint, queryParams);
-      final response = await http
+      final response = await _client
           .get(uri, headers: _buildHeaders())
           .timeout(const Duration(seconds: 10));
       return _processResponse(response);
@@ -65,7 +68,7 @@ class ApiClient {
   Future<dynamic> post(String endpoint, {Map<String, dynamic>? body}) async {
     try {
       final uri = _buildUri(endpoint);
-      final response = await http
+      final response = await _client
           .post(
             uri,
             headers: _buildHeaders(),
@@ -92,7 +95,7 @@ class ApiClient {
   Future<dynamic> patch(String endpoint, {Map<String, dynamic>? body}) async {
     try {
       final uri = _buildUri(endpoint);
-      final response = await http
+      final response = await _client
           .patch(
             uri,
             headers: _buildHeaders(),
@@ -109,7 +112,7 @@ class ApiClient {
   Future<dynamic> delete(String endpoint) async {
     try {
       final uri = _buildUri(endpoint);
-      final response = await http
+      final response = await _client
           .delete(uri, headers: _buildHeaders())
           .timeout(const Duration(seconds: 10));
       return _processResponse(response);
