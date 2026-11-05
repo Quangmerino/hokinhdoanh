@@ -1,51 +1,185 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/controllers/business_controller.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/utils/validators.dart';
 
 void showManualCashModal(BuildContext context, BusinessController ctrl, String flow) {
-  final amountCtrl = TextEditingController(text: '500000');
+  final formKey = GlobalKey<FormState>();
+  final isIncome = flow == 'IN';
+  final amountCtrl = TextEditingController(text: CurrencyInputFormatter.format(500000));
   final noteCtrl = TextEditingController();
   String method = 'CASH';
-  String category = flow == 'IN' ? 'OTHER_IN' : 'OPERATING_EXPENSE';
+  String category = isIncome ? 'OTHER_IN' : 'OPERATING_EXPENSE';
+  int? selectedSupId = ctrl.suppliers.isNotEmpty ? ctrl.suppliers.first.id : null;
 
   showDialog(
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setDialogState) => AlertDialog(
-        title: Text(flow == 'IN' ? '➕ Lập Phiếu Thu Ngoài' : '➖ Lập Phiếu Chi / Trả NCC'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
           children: [
-            TextField(
-              controller: amountCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Số tiền (VNĐ)'),
+            CircleAvatar(
+              backgroundColor: isIncome ? Colors.green.shade100 : Colors.red.shade100,
+              child: Icon(
+                isIncome ? Icons.arrow_downward : Icons.arrow_upward,
+                color: isIncome ? Colors.green.shade800 : Colors.red.shade800,
+              ),
             ),
-            DropdownButtonFormField<String>(
-              value: method,
-              decoration: const InputDecoration(labelText: 'Nguồn tiền'),
-              items: const [
-                DropdownMenuItem(value: 'CASH', child: Text('💵 Tiền mặt')),
-                DropdownMenuItem(value: 'BANK', child: Text('🏦 Chuyển khoản')),
-              ],
-              onChanged: (v) => setDialogState(() => method = v ?? 'CASH'),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isIncome ? 'Lập Phiếu Thu Quỹ' : 'Lập Phiếu Chi Quỹ',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    isIncome ? 'Ghi nhận dòng tiền VÀO' : 'Ghi nhận dòng tiền RA',
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                  ),
+                ],
+              ),
             ),
-            TextField(controller: noteCtrl, decoration: const InputDecoration(labelText: 'Diễn giải chi tiết')),
           ],
+        ),
+        content: Form(
+          key: formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Loại thu chi
+                if (!isIncome && ctrl.suppliers.isNotEmpty) ...[
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'OPERATING_EXPENSE', label: Text('Chi phí vận hành', style: TextStyle(fontSize: 12))),
+                      ButtonSegment(value: 'SUPPLIER_DEBT_PAY', label: Text('Trả nợ NCC', style: TextStyle(fontSize: 12))),
+                    ],
+                    selected: {category},
+                    onSelectionChanged: (v) => setDialogState(() => category = v.first),
+                  ),
+                  const SizedBox(height: 12),
+                  if (category == 'SUPPLIER_DEBT_PAY') ...[
+                    DropdownButtonFormField<int>(
+                      value: selectedSupId,
+                      decoration: const InputDecoration(
+                        labelText: 'Chọn Nhà cung cấp cần trả nợ',
+                        prefixIcon: Icon(Icons.local_shipping_outlined),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                      ),
+                      items: ctrl.suppliers.map((s) {
+                        return DropdownMenuItem(
+                          value: s.id,
+                          child: Text('${s.name} (Nợ: ${AppFormatters.formatVnd(s.payableDebt)})'),
+                        );
+                      }).toList(),
+                      onChanged: (v) => setDialogState(() => selectedSupId = v),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ],
+
+                // SỐ TIỀN THU / CHI (FORMAT 500.000 VNĐ)
+                TextFormField(
+                  controller: amountCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    CurrencyInputFormatter(),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: isIncome ? 'Số tiền thu vào *' : 'Số tiền chi ra *',
+                    prefixIcon: const Icon(Icons.attach_money),
+                    suffixText: 'VNĐ',
+                    suffixStyle: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isIncome ? Colors.green.shade800 : Colors.red.shade800,
+                    ),
+                    border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                  ),
+                  validator: (v) => Validators.positiveCurrency(v, 'Vui lòng nhập số tiền hợp lệ (> 0đ)'),
+                  onChanged: (_) => setDialogState(() {}),
+                ),
+                const SizedBox(height: 8),
+
+                // QUICK AMOUNT CHIPS
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [50000, 100000, 200000, 500000, 1000000, 2000000, 5000000].map((amt) {
+                    return ActionChip(
+                      visualDensity: VisualDensity.compact,
+                      label: Text(AppFormatters.formatCompact(amt)),
+                      onPressed: () => setDialogState(() => amountCtrl.text = CurrencyInputFormatter.format(amt)),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 14),
+
+                // NGUỒN TIỀN
+                DropdownButtonFormField<String>(
+                  value: method,
+                  decoration: const InputDecoration(
+                    labelText: 'Nguồn tiền / Tài khoản',
+                    prefixIcon: Icon(Icons.account_balance_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'CASH', child: Text('💵 Tiền mặt (Ngăn kéo thu ngân)')),
+                    DropdownMenuItem(value: 'BANK', child: Text('🏦 Tài khoản Ngân hàng')),
+                  ],
+                  onChanged: (v) => setDialogState(() => method = v ?? 'CASH'),
+                ),
+                const SizedBox(height: 12),
+
+                // DIỄN GIẢI
+                TextFormField(
+                  controller: noteCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Diễn giải lý do chi tiết *',
+                    hintText: isIncome ? 'VD: Bán bao bì ve chai, thu tiền điện...' : 'VD: Mua túi bóng, trả tiền điện tháng 5...',
+                    prefixIcon: const Icon(Icons.edit_note_outlined),
+                    border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                  ),
+                  validator: (v) => Validators.required(v, 'Vui lòng nhập diễn giải lý do'),
+                ),
+              ],
+            ),
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
-          FilledButton(
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: isIncome ? Colors.green.shade700 : Colors.red.shade700,
+            ),
+            icon: const Icon(Icons.check, size: 18),
             onPressed: () {
+              if (!formKey.currentState!.validate()) return;
+              final amt = AppFormatters.parseVnd(amountCtrl.text);
               ctrl.addManualCashTransaction(
                 flow: flow,
                 category: category,
-                amount: int.tryParse(amountCtrl.text.trim()) ?? 0,
+                amount: amt,
                 method: method,
                 note: noteCtrl.text.trim(),
+                supplierId: category == 'SUPPLIER_DEBT_PAY' ? selectedSupId : null,
               );
               Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Đã ghi sổ quỹ: ${isIncome ? '+' : '-'}${AppFormatters.formatVnd(amt)}'),
+                  backgroundColor: isIncome ? Colors.green.shade800 : Colors.red.shade800,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
             },
-            child: const Text('Ghi Sổ Quỹ'),
+            label: Text(isIncome ? 'Ghi Thu Sổ Quỹ' : 'Ghi Chi Sổ Quỹ'),
           ),
         ],
       ),

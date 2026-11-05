@@ -21,8 +21,15 @@ class CatalogScreen extends StatefulWidget {
 }
 
 class _CatalogScreenState extends State<CatalogScreen> {
+  final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
   bool _lowStockOnly = false;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   BusinessController get ctrl => widget.controller;
 
@@ -287,9 +294,19 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   children: [
                     Expanded(
                       child: TextField(
+                        controller: _searchCtrl,
                         decoration: InputDecoration(
                           hintText: 'Tìm mặt hàng, mã SKU...',
                           prefixIcon: const Icon(Icons.search, size: 18),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, size: 18),
+                                  onPressed: () {
+                                    _searchCtrl.clear();
+                                    setState(() => _searchQuery = '');
+                                  },
+                                )
+                              : null,
                           isDense: true,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
