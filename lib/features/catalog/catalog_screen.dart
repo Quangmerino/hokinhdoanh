@@ -329,6 +329,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   )
                 else
                   ...filteredProducts.map((p) {
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
                     final cat = ctrl.categories.where((c) => c.id == p.categoryId).firstOrNull;
                     final sup = ctrl.suppliers.where((s) => s.id == p.primarySupplierId).firstOrNull;
                     final isLow = p.stockQty <= p.minStock;
@@ -336,9 +337,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isLow ? Colors.amber.shade50 : Colors.grey.shade50,
+                        color: isLow
+                            ? (isDark ? const Color(0xFF2E1C05) : Colors.amber.shade50)
+                            : (isDark ? const Color(0xFF152238) : Colors.grey.shade50),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: isLow ? Colors.amber.shade300 : Colors.grey.shade300),
+                        border: Border.all(
+                          color: isLow
+                              ? (isDark ? Colors.amber.shade800 : Colors.amber.shade300)
+                              : (isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,19 +376,28 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                     ),
                                     Text(
                                       '${cat?.name ?? "Chưa phân loại"} • NCC: ${sup?.name ?? "Chưa gán"}',
-                                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                                      ),
                                     ),
                                     Text(
                                       'Giá bán: ${AppFormatters.formatVnd(p.retailPrice)}/${p.baseUnit}'
                                       '${p.hasPackUnit ? " • ${p.packUnitName}: ${AppFormatters.formatVnd(p.packPrice)}" : ""}',
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.teal.shade800),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? Colors.tealAccent : Colors.teal.shade800,
+                                      ),
                                     ),
                                     Text(
                                       'Tồn kho: ${p.formattedStock}',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: isLow ? Colors.red.shade700 : Colors.black87,
+                                        color: isLow
+                                            ? (isDark ? Colors.redAccent : Colors.red.shade700)
+                                            : (isDark ? Colors.white : Colors.black87),
                                       ),
                                     ),
                                   ],
@@ -443,6 +459,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   Widget _buildCategoryTreeNode(BuildContext context, CategoryNode cat) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final nodeKey = 'cat-${cat.id}';
     final isExp = ctrl.expandedNodeKeys.contains(nodeKey);
     final children = ctrl.categories.where((c) => c.parentId == cat.id).toList();
@@ -454,9 +471,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: isSelected ? Colors.teal.shade50 : Colors.white,
+        color: isSelected
+            ? (isDark ? Colors.teal.shade900.withValues(alpha: 0.5) : Colors.teal.shade50)
+            : (isDark ? const Color(0xFF152238) : Colors.white),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isSelected ? Colors.teal : Colors.grey.shade300),
+        border: Border.all(
+          color: isSelected
+              ? Colors.teal
+              : (isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,7 +529,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: ctrl.selectedSupplierId == sup.id ? FontWeight.bold : FontWeight.normal,
-                              color: Colors.indigo.shade700,
+                              color: isDark ? Colors.indigoAccent : Colors.indigo.shade700,
                             ),
                           ),
                         ),
@@ -521,14 +544,21 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   Widget _buildSupplierTreeNode(BuildContext context, SupplierModel sup) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSelected = ctrl.selectedSupplierId == sup.id && ctrl.selectedCategoryId == null;
     final supCats = ctrl.categories.where((c) => sup.categoryIds.contains(c.id)).toList();
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: isSelected ? Colors.indigo.shade50 : Colors.white,
+        color: isSelected
+            ? (isDark ? Colors.indigo.shade900.withValues(alpha: 0.5) : Colors.indigo.shade50)
+            : (isDark ? const Color(0xFF152238) : Colors.white),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: isSelected ? Colors.indigo : Colors.grey.shade300),
+        border: Border.all(
+          color: isSelected
+              ? Colors.indigo
+              : (isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
+        ),
       ),
       child: ListTile(
         dense: true,
@@ -537,7 +567,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
         title: Text(sup.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
         subtitle: Text(
           supCats.isEmpty ? 'Chưa gắn danh mục' : supCats.map((c) => '${c.icon} ${c.name}').join(' • '),
-          style: const TextStyle(fontSize: 11),
+          style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey.shade700),
         ),
       ),
     );

@@ -18,6 +18,7 @@ void showCollectDebtDialog(BuildContext context, BusinessController ctrl, Househ
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setDialogState) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
         final payingAmount = AppFormatters.parseVnd(amountCtrl.text);
         final remainingDebt = (hh.currentDebt - payingAmount).clamp(0, 999999999);
         final payingShell = int.tryParse(shellCtrl.text.trim()) ?? 0;
@@ -28,8 +29,8 @@ void showCollectDebtDialog(BuildContext context, BusinessController ctrl, Househ
           title: Row(
             children: [
               CircleAvatar(
-                backgroundColor: Colors.green.shade100,
-                child: const Icon(Icons.payments, color: Colors.green),
+                backgroundColor: isDark ? Colors.green.shade900 : Colors.green.shade100,
+                child: Icon(Icons.payments, color: isDark ? Colors.green.shade200 : Colors.green),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -37,7 +38,7 @@ void showCollectDebtDialog(BuildContext context, BusinessController ctrl, Househ
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('Thu Nợ Khách Hàng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text('Hộ: ${hh.name}', style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
+                    Text('Hộ: ${hh.name}', style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.grey.shade700)),
                   ],
                 ),
               ),
@@ -56,23 +57,34 @@ void showCollectDebtDialog(BuildContext context, BusinessController ctrl, Househ
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
+                      color: isDark ? Colors.amber.shade900.withValues(alpha: 0.3) : Colors.amber.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber.shade300),
+                      border: Border.all(color: isDark ? Colors.amber.shade700 : Colors.amber.shade300),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Dư nợ sổ hiện tại:', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                        Text('Dư nợ sổ hiện tại:', style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)),
                         const SizedBox(height: 2),
                         Text(
                           AppFormatters.formatVnd(hh.currentDebt),
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.deepOrange.shade800),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: isDark ? Colors.deepOrange.shade300 : Colors.deepOrange.shade800,
+                          ),
                         ),
                         if (hh.containerOwed > 0)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
-                            child: Text('Đang mượn: ${hh.containerOwed} vỏ / két', style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold)),
+                            child: Text(
+                              'Đang mượn: ${hh.containerOwed} vỏ / két',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? Colors.blue.shade300 : Colors.blue,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                       ],
                     ),
@@ -91,7 +103,10 @@ void showCollectDebtDialog(BuildContext context, BusinessController ctrl, Househ
                       labelText: 'Số tiền khách trả đợt này *',
                       prefixIcon: const Icon(Icons.monetization_on_outlined),
                       suffixText: 'VNĐ',
-                      suffixStyle: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal.shade800),
+                      suffixStyle: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.teal.shade300 : Colors.teal.shade800,
+                      ),
                       border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                     ),
                     validator: (v) => Validators.positiveCurrency(v, 'Vui lòng nhập số tiền hợp lệ (> 0đ)'),
@@ -133,9 +148,15 @@ void showCollectDebtDialog(BuildContext context, BusinessController ctrl, Househ
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
-                      color: remainingDebt == 0 ? Colors.green.shade50 : Colors.grey.shade100,
+                      color: remainingDebt == 0
+                          ? (isDark ? Colors.green.shade900.withValues(alpha: 0.3) : Colors.green.shade50)
+                          : (isDark ? const Color(0xFF1E293B) : Colors.grey.shade100),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: remainingDebt == 0 ? Colors.green.shade300 : Colors.grey.shade300),
+                      border: Border.all(
+                        color: remainingDebt == 0
+                            ? (isDark ? Colors.green.shade700 : Colors.green.shade300)
+                            : (isDark ? const Color(0xFF334155) : Colors.grey.shade300),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,7 +170,9 @@ void showCollectDebtDialog(BuildContext context, BusinessController ctrl, Househ
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: remainingDebt == 0 ? Colors.green.shade800 : Colors.deepOrange.shade800,
+                                color: remainingDebt == 0
+                                    ? (isDark ? Colors.green.shade300 : Colors.green.shade800)
+                                    : (isDark ? Colors.deepOrange.shade300 : Colors.deepOrange.shade800),
                               ),
                             ),
                           ],
@@ -160,13 +183,15 @@ void showCollectDebtDialog(BuildContext context, BusinessController ctrl, Househ
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Vỏ bao bì còn giữ:', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                                Text('Vỏ bao bì còn giữ:', style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : Colors.black54)),
                                 Text(
                                   remainingShell == 0 ? '✨ Đã trả hết vỏ' : '$remainingShell vỏ',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: remainingShell == 0 ? Colors.green.shade800 : Colors.blue.shade800,
+                                    color: remainingShell == 0
+                                        ? (isDark ? Colors.green.shade300 : Colors.green.shade800)
+                                        : (isDark ? Colors.blue.shade300 : Colors.blue.shade800),
                                   ),
                                 ),
                               ],

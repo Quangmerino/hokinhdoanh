@@ -36,19 +36,58 @@ class _HoKinhDoanhAppState extends State<HoKinhDoanhApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sổ Tay Hộ Kinh Doanh',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0F766E),
-          brightness: Brightness.light,
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => MaterialApp(
+        title: 'Sổ Tay Hộ Kinh Doanh',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF0F766E),
+            brightness: Brightness.light,
+          ),
+          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF0F766E),
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          cardTheme: CardThemeData(
+            color: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.grey.shade300),
+            ),
+          ),
+          useMaterial3: true,
         ),
-        useMaterial3: true,
-      ),
-      home: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) => MainNavigationShell(controller: _controller),
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF0F766E),
+            brightness: Brightness.dark,
+          ),
+          scaffoldBackgroundColor: const Color(0xFF0B1320),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF0F766E),
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          cardTheme: const CardThemeData(
+            color: Color(0xFF152238),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+              side: BorderSide(color: Color(0xFF1E293B)),
+            ),
+          ),
+          dialogTheme: const DialogThemeData(
+            backgroundColor: Color(0xFF152238),
+          ),
+          useMaterial3: true,
+        ),
+        themeMode: _controller.themeMode,
+        home: MainNavigationShell(controller: _controller),
       ),
     );
   }

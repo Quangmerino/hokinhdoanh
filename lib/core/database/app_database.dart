@@ -18,6 +18,11 @@ class LocalSqliteDatabase {
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
+      onOpen: (db) async {
+        try {
+          await db.execute("ALTER TABLE store_settings ADD COLUMN theme_mode TEXT DEFAULT 'system'");
+        } catch (_) {}
+      },
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE store_settings (
@@ -26,7 +31,8 @@ class LocalSqliteDatabase {
             store_subtitle TEXT NOT NULL,
             bank_name TEXT,
             bank_account TEXT,
-            bank_holder TEXT
+            bank_holder TEXT,
+            theme_mode TEXT DEFAULT 'system'
           )
         ''');
 

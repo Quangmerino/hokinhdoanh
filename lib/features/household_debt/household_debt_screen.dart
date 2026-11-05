@@ -19,6 +19,7 @@ class _HouseholdDebtScreenState extends State<HouseholdDebtScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedHh = ctrl.households.where((h) => h.id == ctrl.selectedHouseholdId).firstOrNull ??
         ctrl.households.firstOrNull;
 
@@ -30,6 +31,7 @@ class _HouseholdDebtScreenState extends State<HouseholdDebtScreen> {
           children: [
             Expanded(
               child: _buildMetricCard(
+                context,
                 'Tổng Nợ Phải Thu',
                 AppFormatters.formatVnd(ctrl.totalHouseholdDebt),
                 Colors.amber.shade800,
@@ -38,6 +40,7 @@ class _HouseholdDebtScreenState extends State<HouseholdDebtScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: _buildMetricCard(
+                context,
                 'Vỏ / Bao Bì Giữ',
                 '${ctrl.totalContainerOwed} vỏ',
                 Colors.blue.shade700,
@@ -52,7 +55,7 @@ class _HouseholdDebtScreenState extends State<HouseholdDebtScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -84,7 +87,7 @@ class _HouseholdDebtScreenState extends State<HouseholdDebtScreen> {
                     final isSelected = selectedHh?.id == h.id;
                     return ListTile(
                       selected: isSelected,
-                      selectedTileColor: Colors.teal.shade50,
+                      selectedTileColor: isDark ? Colors.teal.shade900.withValues(alpha: 0.3) : Colors.teal.shade50,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       onTap: () => setState(() => ctrl.selectedHouseholdId = h.id),
                       title: Text(h.name, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -118,7 +121,7 @@ class _HouseholdDebtScreenState extends State<HouseholdDebtScreen> {
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey.shade300),
+              side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
             ),
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -205,18 +208,19 @@ class _HouseholdDebtScreenState extends State<HouseholdDebtScreen> {
     );
   }
 
-  Widget _buildMetricCard(String label, String value, Color color) {
+  Widget _buildMetricCard(BuildContext context, String label, String value, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF152238) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+          Text(label, style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)),
           const SizedBox(height: 4),
           Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
         ],

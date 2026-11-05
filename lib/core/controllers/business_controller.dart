@@ -141,6 +141,38 @@ class BusinessController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Theme & Appearance
+  ThemeMode get themeMode {
+    switch (storeConfig.themeMode) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+      default:
+        return ThemeMode.system;
+    }
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    String modeStr = 'system';
+    if (mode == ThemeMode.light) modeStr = 'light';
+    if (mode == ThemeMode.dark) modeStr = 'dark';
+
+    final updated = storeConfig.copyWith(themeMode: modeStr);
+    await updateStoreConfig(updated);
+  }
+
+  Future<void> toggleThemeMode() async {
+    if (themeMode == ThemeMode.system) {
+      await setThemeMode(ThemeMode.light);
+    } else if (themeMode == ThemeMode.light) {
+      await setThemeMode(ThemeMode.dark);
+    } else {
+      await setThemeMode(ThemeMode.system);
+    }
+  }
+
   // Store Settings
   Future<void> updateStoreConfig(StoreConfig newConfig) async {
     storeConfig = newConfig;

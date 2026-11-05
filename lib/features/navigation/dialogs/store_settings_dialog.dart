@@ -10,6 +10,7 @@ void showStoreSettingsDialog(BuildContext context, BusinessController ctrl) {
   final bankCtrl = TextEditingController(text: ctrl.storeConfig.bankName);
   final accCtrl = TextEditingController(text: ctrl.storeConfig.bankAccount);
   final holderCtrl = TextEditingController(text: ctrl.storeConfig.bankHolder);
+  String selectedTheme = ctrl.storeConfig.themeMode;
 
   const commonBanks = [
     'MB Bank',
@@ -118,6 +119,33 @@ void showStoreSettingsDialog(BuildContext context, BusinessController ctrl) {
                     border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                   ),
                 ),
+                const SizedBox(height: 16),
+                const Text(
+                  '🌓 Giao Diện Ứng Dụng (Theme)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 'system',
+                      label: Text('Hệ thống', style: TextStyle(fontSize: 11)),
+                      icon: Icon(Icons.brightness_auto, size: 16),
+                    ),
+                    ButtonSegment(
+                      value: 'light',
+                      label: Text('Sáng', style: TextStyle(fontSize: 11)),
+                      icon: Icon(Icons.light_mode, size: 16),
+                    ),
+                    ButtonSegment(
+                      value: 'dark',
+                      label: Text('Tối', style: TextStyle(fontSize: 11)),
+                      icon: Icon(Icons.dark_mode, size: 16),
+                    ),
+                  ],
+                  selected: {selectedTheme},
+                  onSelectionChanged: (v) => setDialogState(() => selectedTheme = v.first),
+                ),
               ],
             ),
           ),
@@ -134,6 +162,7 @@ void showStoreSettingsDialog(BuildContext context, BusinessController ctrl) {
                 bankName: bankCtrl.text.trim(),
                 bankAccount: accCtrl.text.trim(),
                 bankHolder: holderCtrl.text.trim(),
+                themeMode: selectedTheme,
               ));
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(

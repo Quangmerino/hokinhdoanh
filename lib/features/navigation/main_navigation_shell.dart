@@ -41,6 +41,68 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           ],
         ),
         actions: [
+          PopupMenuButton<ThemeMode>(
+            tooltip: 'Chế độ giao diện (Sáng / Tối / Hệ thống)',
+            icon: Icon(
+              ctrl.themeMode == ThemeMode.dark
+                  ? Icons.dark_mode
+                  : (ctrl.themeMode == ThemeMode.light ? Icons.light_mode : Icons.brightness_auto),
+            ),
+            onSelected: (mode) {
+              ctrl.setThemeMode(mode);
+              final modeName = mode == ThemeMode.system
+                  ? 'Theo hệ thống'
+                  : (mode == ThemeMode.dark ? 'Chế độ tối' : 'Chế độ sáng');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Đã chuyển giao diện: $modeName'),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: ThemeMode.system,
+                child: Row(
+                  children: [
+                    const Icon(Icons.brightness_auto, size: 20),
+                    const SizedBox(width: 10),
+                    const Text('Theo hệ thống'),
+                    const Spacer(),
+                    if (ctrl.themeMode == ThemeMode.system)
+                      const Icon(Icons.check, size: 18, color: Colors.teal),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: ThemeMode.light,
+                child: Row(
+                  children: [
+                    const Icon(Icons.light_mode, size: 20, color: Colors.orange),
+                    const SizedBox(width: 10),
+                    const Text('Chế độ sáng'),
+                    const Spacer(),
+                    if (ctrl.themeMode == ThemeMode.light)
+                      const Icon(Icons.check, size: 18, color: Colors.teal),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: ThemeMode.dark,
+                child: Row(
+                  children: [
+                    const Icon(Icons.dark_mode, size: 20, color: Colors.indigoAccent),
+                    const SizedBox(width: 10),
+                    const Text('Chế độ tối'),
+                    const Spacer(),
+                    if (ctrl.themeMode == ThemeMode.dark)
+                      const Icon(Icons.check, size: 18, color: Colors.teal),
+                  ],
+                ),
+              ),
+            ],
+          ),
           IconButton(
             tooltip: 'Cài đặt cửa hàng & VietQR',
             icon: const Icon(Icons.settings_outlined),

@@ -16,35 +16,41 @@ void showManualCashModal(BuildContext context, BusinessController ctrl, String f
   showDialog(
     context: context,
     builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setDialogState) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: isIncome ? Colors.green.shade100 : Colors.red.shade100,
-              child: Icon(
-                isIncome ? Icons.arrow_downward : Icons.arrow_upward,
-                color: isIncome ? Colors.green.shade800 : Colors.red.shade800,
+      builder: (ctx, setDialogState) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: isIncome
+                    ? (isDark ? Colors.green.shade900 : Colors.green.shade100)
+                    : (isDark ? Colors.red.shade900 : Colors.red.shade100),
+                child: Icon(
+                  isIncome ? Icons.arrow_downward : Icons.arrow_upward,
+                  color: isIncome
+                      ? (isDark ? Colors.green.shade200 : Colors.green.shade800)
+                      : (isDark ? Colors.red.shade200 : Colors.red.shade800),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isIncome ? 'Lập Phiếu Thu Quỹ' : 'Lập Phiếu Chi Quỹ',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    isIncome ? 'Ghi nhận dòng tiền VÀO' : 'Ghi nhận dòng tiền RA',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-                  ),
-                ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isIncome ? 'Lập Phiếu Thu Quỹ' : 'Lập Phiếu Chi Quỹ',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      isIncome ? 'Ghi nhận dòng tiền VÀO' : 'Ghi nhận dòng tiền RA',
+                      style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.grey.shade700),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         content: Form(
           key: formKey,
           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -98,7 +104,9 @@ void showManualCashModal(BuildContext context, BusinessController ctrl, String f
                     suffixText: 'VNĐ',
                     suffixStyle: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: isIncome ? Colors.green.shade800 : Colors.red.shade800,
+                      color: isIncome
+                          ? (isDark ? Colors.green.shade300 : Colors.green.shade800)
+                          : (isDark ? Colors.red.shade300 : Colors.red.shade800),
                     ),
                     border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                   ),
@@ -182,7 +190,8 @@ void showManualCashModal(BuildContext context, BusinessController ctrl, String f
             label: Text(isIncome ? 'Ghi Thu Sổ Quỹ' : 'Ghi Chi Sổ Quỹ'),
           ),
         ],
-      ),
-    ),
-  );
+      );
+    },
+  ),
+);
 }

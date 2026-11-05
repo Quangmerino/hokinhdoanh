@@ -35,6 +35,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isSale = ctrl.posOrderType == 'SALE';
     final selectedHh = ctrl.households.where((h) => h.id == _selectedHouseholdId).firstOrNull;
     final hasShellItems = ctrl.posCart.any((i) => i.product.trackReturnableShell);
@@ -51,7 +52,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -102,7 +103,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -150,9 +151,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
+                        color: isDark ? const Color(0xFF1E293B).withValues(alpha: 0.5) : Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: isDark ? const Color(0xFF334155) : Colors.grey.shade300),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,7 +222,11 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                               ),
                               Text(
                                 AppFormatters.formatVnd(item.lineTotal),
-                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Colors.teal.shade800),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 15,
+                                  color: isDark ? Colors.teal.shade300 : Colors.teal.shade800,
+                                ),
                               ),
                             ],
                           ),
@@ -240,7 +245,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -312,9 +317,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: isDark ? Colors.blue.shade900.withValues(alpha: 0.3) : Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue.shade200),
+                      border: Border.all(color: isDark ? Colors.blue.shade700 : Colors.blue.shade200),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -384,9 +389,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.teal.shade50,
+                    color: isDark ? Colors.teal.shade900.withValues(alpha: 0.3) : Colors.teal.shade50,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.teal.shade300),
+                    border: Border.all(color: isDark ? Colors.teal.shade700 : Colors.teal.shade300),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -394,7 +399,11 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                       const Text('Tổng thanh toán:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       Text(
                         AppFormatters.formatVnd(_finalTotal),
-                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.teal.shade900),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 20,
+                          color: isDark ? Colors.teal.shade200 : Colors.teal.shade900,
+                        ),
                       ),
                     ],
                   ),
@@ -452,7 +461,10 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                           labelText: 'Số tiền trả ngay *',
                           prefixIcon: const Icon(Icons.payments_outlined),
                           suffixText: 'VNĐ',
-                          suffixStyle: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal.shade800),
+                          suffixStyle: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.teal.shade300 : Colors.teal.shade800,
+                          ),
                           border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                         ),
                         onChanged: (_) => setState(() {}),
@@ -482,9 +494,15 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _debtAmount > 0 ? Colors.deepOrange.shade50 : Colors.green.shade50,
+                    color: _debtAmount > 0
+                        ? (isDark ? Colors.deepOrange.shade900.withValues(alpha: 0.3) : Colors.deepOrange.shade50)
+                        : (isDark ? Colors.green.shade900.withValues(alpha: 0.3) : Colors.green.shade50),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _debtAmount > 0 ? Colors.deepOrange.shade300 : Colors.green.shade300),
+                    border: Border.all(
+                      color: _debtAmount > 0
+                          ? (isDark ? Colors.deepOrange.shade700 : Colors.deepOrange.shade300)
+                          : (isDark ? Colors.green.shade700 : Colors.green.shade300),
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -493,7 +511,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                         _debtAmount > 0 ? 'Số tiền ghi vào Sổ nợ:' : 'Thanh toán hoàn tất:',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: _debtAmount > 0 ? Colors.deepOrange.shade800 : Colors.green.shade800,
+                          color: _debtAmount > 0
+                              ? (isDark ? Colors.deepOrange.shade200 : Colors.deepOrange.shade800)
+                              : (isDark ? Colors.green.shade200 : Colors.green.shade800),
                         ),
                       ),
                       Text(
@@ -501,7 +521,9 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: _debtAmount > 0 ? Colors.deepOrange.shade800 : Colors.green.shade800,
+                          color: _debtAmount > 0
+                              ? (isDark ? Colors.deepOrange.shade200 : Colors.deepOrange.shade800)
+                              : (isDark ? Colors.green.shade200 : Colors.green.shade800),
                         ),
                       ),
                     ],
@@ -514,18 +536,18 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade100,
+                      color: isDark ? Colors.amber.shade900.withValues(alpha: 0.3) : Colors.amber.shade100,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.amber.shade400),
+                      border: Border.all(color: isDark ? Colors.amber.shade700 : Colors.amber.shade400),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.warning_amber_rounded, color: Colors.brown, size: 20),
+                        Icon(Icons.warning_amber_rounded, color: isDark ? Colors.amber.shade300 : Colors.brown, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Lưu ý: Hộ ${selectedHh.name} sẽ có tổng nợ ${AppFormatters.formatVnd(selectedHh.currentDebt + _debtAmount)}, vượt hạn mức tối đa (${AppFormatters.formatVnd(selectedHh.creditLimit)})!',
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.brown),
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? Colors.amber.shade200 : Colors.brown),
                           ),
                         ),
                       ],

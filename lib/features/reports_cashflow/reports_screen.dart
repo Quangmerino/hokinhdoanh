@@ -17,6 +17,7 @@ class _ReportsCashflowScreenState extends State<ReportsCashflowScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final anchor = ctrl.reportAnchorDate;
     final gran = ctrl.reportGranularity;
 
@@ -52,7 +53,7 @@ class _ReportsCashflowScreenState extends State<ReportsCashflowScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -101,10 +102,10 @@ class _ReportsCashflowScreenState extends State<ReportsCashflowScreen> {
           mainAxisSpacing: 8,
           childAspectRatio: 1.9,
           children: [
-            _buildKpiBox('1. Tổng Doanh Thu', AppFormatters.formatVnd(totalRev), Colors.teal.shade900),
-            _buildKpiBox('2. Lợi Nhuận Gộp', AppFormatters.formatVnd(grossProfit), Colors.green.shade700),
-            _buildKpiBox('3. Dòng Tiền VÀO', AppFormatters.formatVnd(cashIn), Colors.blue.shade700),
-            _buildKpiBox('4. Dòng Tiền RA', '${AppFormatters.formatVnd(cashOut)} (Thuần: ${AppFormatters.formatVnd(netCash)})', Colors.red.shade700),
+            _buildKpiBox(context, '1. Tổng Doanh Thu', AppFormatters.formatVnd(totalRev), isDark ? Colors.teal.shade300 : Colors.teal.shade900),
+            _buildKpiBox(context, '2. Lợi Nhuận Gộp', AppFormatters.formatVnd(grossProfit), isDark ? Colors.green.shade300 : Colors.green.shade700),
+            _buildKpiBox(context, '3. Dòng Tiền VÀO', AppFormatters.formatVnd(cashIn), isDark ? Colors.blue.shade300 : Colors.blue.shade700),
+            _buildKpiBox(context, '4. Dòng Tiền RA', '${AppFormatters.formatVnd(cashOut)} (Thuần: ${AppFormatters.formatVnd(netCash)})', isDark ? Colors.red.shade300 : Colors.red.shade700),
           ],
         ),
         const SizedBox(height: 12),
@@ -114,7 +115,7 @@ class _ReportsCashflowScreenState extends State<ReportsCashflowScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -167,7 +168,7 @@ class _ReportsCashflowScreenState extends State<ReportsCashflowScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -191,14 +192,29 @@ class _ReportsCashflowScreenState extends State<ReportsCashflowScreen> {
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       leading: CircleAvatar(
-                        backgroundColor: isIn ? Colors.green.shade100 : Colors.red.shade100,
-                        child: Text(isIn ? '+' : '-', style: TextStyle(fontWeight: FontWeight.bold, color: isIn ? Colors.green.shade800 : Colors.red.shade800)),
+                        backgroundColor: isIn
+                            ? (isDark ? Colors.green.shade900 : Colors.green.shade100)
+                            : (isDark ? Colors.red.shade900 : Colors.red.shade100),
+                        child: Text(
+                          isIn ? '+' : '-',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isIn
+                                ? (isDark ? Colors.green.shade200 : Colors.green.shade800)
+                                : (isDark ? Colors.red.shade200 : Colors.red.shade800),
+                          ),
+                        ),
                       ),
                       title: Text(tx.note, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                       subtitle: Text('${tx.dateStr} • ${tx.method == "BANK" ? "Chuyển khoản" : "Tiền mặt"}'),
                       trailing: Text(
                         '${isIn ? "+" : "-"}${AppFormatters.formatVnd(tx.amount)}',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: isIn ? Colors.green.shade700 : Colors.red.shade700),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isIn
+                              ? (isDark ? Colors.green.shade300 : Colors.green.shade700)
+                              : (isDark ? Colors.red.shade300 : Colors.red.shade700),
+                        ),
                       ),
                     );
                   }),
@@ -210,19 +226,20 @@ class _ReportsCashflowScreenState extends State<ReportsCashflowScreen> {
     );
   }
 
-  Widget _buildKpiBox(String title, String value, Color color) {
+  Widget _buildKpiBox(BuildContext context, String title, String value, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF152238) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(title, style: const TextStyle(fontSize: 11, color: Colors.black54)),
+          Text(title, style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : Colors.black54)),
           const SizedBox(height: 4),
           Text(value, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
         ],
