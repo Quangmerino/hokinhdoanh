@@ -386,21 +386,40 @@ class LocalSqliteDatabase {
     return UserModel.fromMap(users.first);
   }
 
-  Future<void> saveAuthSession(int userId) async {
+  Future<void> saveAuthSession(int userId, {String? token}) async {
     final db = await database;
+    try {
+      await db.execute('ALTER TABLE auth_session ADD COLUMN token TEXT');
+    } catch (_) {}
     await db.insert('auth_session', {
       'id': 1,
       'user_id': userId,
       'logged_in_at': DateTime.now().toIso8601String(),
+      'token': token,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<String?> getAuthToken() async {
+    final db = await database;
+    try {
+      final rows = await db.query('auth_session', where: 'id = 1', limit: 1);
+      if (rows.isNotEmpty) {
+        return rows.first['token'] as String?;
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<void> clearAuthSession() async {
     final db = await database;
+    try {
+      await db.execute('ALTER TABLE auth_session ADD COLUMN token TEXT');
+    } catch (_) {}
     await db.insert('auth_session', {
       'id': 1,
       'user_id': null,
       'logged_in_at': null,
+      'token': null,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 

@@ -100,7 +100,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  void _handleVerifyOtp() {
+  Future<void> _handleVerifyOtp() async {
     final code = _otpCtrl.text.trim();
     if (code.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -113,15 +113,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
 
-    final isValid = widget.controller.verifyRecoveryOtp(
+    setState(() => _isLoading = true);
+    final isValid = await widget.controller.verifyRecoveryOtp(
       identifier: _identifierCtrl.text.trim(),
       code: code,
     );
+    setState(() => _isLoading = false);
 
     if (isValid) {
       _countdownTimer?.cancel();
       setState(() => _currentStep = 3);
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Mã OTP không chính xác hoặc đã hết hạn (5 phút)!'),
@@ -138,6 +141,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     final success = await widget.controller.resetPassword(
       identifier: _identifierCtrl.text.trim(),
+      code: _otpCtrl.text.trim(),
       newPassword: _newPassCtrl.text,
     );
 
