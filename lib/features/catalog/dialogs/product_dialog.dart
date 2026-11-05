@@ -97,33 +97,28 @@ void showProductDialog(
                   const SizedBox(height: 12),
 
                   // SKU & Tự sinh mã
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: skuCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Mã SKU / Barcode',
-                            hintText: 'VD: SP-01, 893...',
-                            prefixIcon: Icon(Icons.qr_code),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                  TextFormField(
+                    controller: skuCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Mã SKU / Barcode',
+                      hintText: 'VD: SP-01, 893...',
+                      prefixIcon: const Icon(Icons.qr_code),
+                      suffixIcon: Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: TextButton.icon(
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
                           ),
+                          onPressed: () {
+                            final auto = 'SP${DateTime.now().millisecondsSinceEpoch % 100000}';
+                            setDialogState(() => skuCtrl.text = auto);
+                          },
+                          icon: const Icon(Icons.auto_awesome, size: 16),
+                          label: const Text('Tạo mã', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () {
-                          final auto = 'SP${DateTime.now().millisecondsSinceEpoch % 100000}';
-                          setDialogState(() => skuCtrl.text = auto);
-                        },
-                        icon: const Icon(Icons.auto_awesome, size: 16),
-                        label: const Text('Tạo mã', style: TextStyle(fontSize: 12)),
-                      ),
-                    ],
+                      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                    ),
                   ),
                   const SizedBox(height: 12),
 

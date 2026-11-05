@@ -32,10 +32,14 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           children: [
             Text(
               ctrl.storeConfig.storeName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             Text(
               'Quỹ: ${AppFormatters.formatVnd(ctrl.totalCashBalance)} • Nợ Hộ GĐ: ${AppFormatters.formatVnd(ctrl.totalHouseholdDebt)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 11, color: Colors.tealAccent),
             ),
           ],

@@ -62,6 +62,7 @@ void showManualCashModal(BuildContext context, BusinessController ctrl, String f
                 // Loại thu chi
                 if (!isIncome && ctrl.suppliers.isNotEmpty) ...[
                   SegmentedButton<String>(
+                    showSelectedIcon: false,
                     segments: const [
                       ButtonSegment(value: 'OPERATING_EXPENSE', label: Text('Chi phí vận hành', style: TextStyle(fontSize: 12))),
                       ButtonSegment(value: 'SUPPLIER_DEBT_PAY', label: Text('Trả nợ NCC', style: TextStyle(fontSize: 12))),
@@ -130,18 +131,24 @@ void showManualCashModal(BuildContext context, BusinessController ctrl, String f
                 const SizedBox(height: 14),
 
                 // NGUỒN TIỀN
-                DropdownButtonFormField<String>(
-                  value: method,
-                  decoration: const InputDecoration(
-                    labelText: 'Nguồn tiền / Tài khoản',
-                    prefixIcon: Icon(Icons.account_balance_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'CASH', child: Text('💵 Tiền mặt (Ngăn kéo thu ngân)')),
-                    DropdownMenuItem(value: 'BANK', child: Text('🏦 Tài khoản Ngân hàng')),
+                const Text('Nguồn tiền / Hình thức:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                SegmentedButton<String>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(
+                      value: 'CASH',
+                      icon: Icon(Icons.payments_outlined, size: 16),
+                      label: Text('Tiền mặt', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                    ButtonSegment(
+                      value: 'BANK',
+                      icon: Icon(Icons.account_balance_outlined, size: 16),
+                      label: Text('Chuyển khoản', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
                   ],
-                  onChanged: (v) => setDialogState(() => method = v ?? 'CASH'),
+                  selected: {method},
+                  onSelectionChanged: (v) => setDialogState(() => method = v.first),
                 ),
                 const SizedBox(height: 12),
 

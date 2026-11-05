@@ -65,11 +65,14 @@ class _HouseholdDebtScreenState extends State<HouseholdDebtScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      '👨‍👩‍👧‍👦 Danh Sách Hộ Gia Đình',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    const Expanded(
+                      child: Text(
+                        '👨‍👩‍👧‍👦 Danh Sách Hộ Gia Đình',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
                     ),
                     FilledButton.icon(
+                      style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
                       onPressed: () => showHouseholdDialog(context, ctrl),
                       icon: const Icon(Icons.person_add_alt_1, size: 16),
                       label: const Text('+ Thêm Hộ GĐ'),
@@ -154,14 +157,16 @@ class _HouseholdDebtScreenState extends State<HouseholdDebtScreen> {
                     runSpacing: 8,
                     children: [
                       FilledButton.icon(
+                        style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
                         onPressed: () => showCollectDebtDialog(context, ctrl, selectedHh),
                         icon: const Icon(Icons.payments_outlined, size: 16),
-                        label: const Text('💵 Thu Nợ / Trả Vỏ'),
+                        label: const Text('Thu Nợ / Trả Vỏ'),
                       ),
                       OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
                         onPressed: () => showVietQrZaloDialog(context, ctrl, selectedHh),
                         icon: const Icon(Icons.qr_code_2, size: 16),
-                        label: const Text('📲 Phiếu Nhắc Nợ VietQR Zalo'),
+                        label: const Text('Nhắc nợ VietQR'),
                       ),
                     ],
                   ),

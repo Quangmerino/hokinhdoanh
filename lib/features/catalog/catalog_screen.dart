@@ -35,6 +35,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final roots = ctrl.categories.where((c) => c.parentId == null).toList();
     final subtreeIds = ctrl.selectedCategoryId != null
         ? ctrl.getCategorySubtreeIds(ctrl.selectedCategoryId)
@@ -77,7 +78,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -88,37 +89,43 @@ class _CatalogScreenState extends State<CatalogScreen> {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 SegmentedButton<String>(
+                  showSelectedIcon: false,
                   segments: const [
                     ButtonSegment(
                       value: 'category',
-                      label: Text('Danh mục ➔ NCC ➔ SP', style: TextStyle(fontSize: 12)),
+                      icon: Icon(Icons.account_tree_outlined, size: 16),
+                      label: Text('Theo Danh mục', style: TextStyle(fontSize: 12)),
                     ),
                     ButtonSegment(
                       value: 'supplier',
-                      label: Text('NCC ➔ Danh mục ➔ SP', style: TextStyle(fontSize: 12)),
+                      icon: Icon(Icons.local_shipping_outlined, size: 16),
+                      label: Text('Theo NCC', style: TextStyle(fontSize: 12)),
                     ),
                   ],
                   selected: {ctrl.treeMode},
                   onSelectionChanged: (val) => ctrl.setTreeMode(val.first),
                 ),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 6,
+                  runSpacing: 6,
                   children: [
                     OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
                       onPressed: () => showCategoryDialog(context, ctrl),
                       icon: const Icon(Icons.create_new_folder_outlined, size: 16),
-                      label: const Text('+ Danh Mục'),
+                      label: const Text('+ Danh mục'),
                     ),
                     OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
                       onPressed: () => showSupplierDialog(context, ctrl),
                       icon: const Icon(Icons.local_shipping_outlined, size: 16),
-                      label: const Text('+ Nhà Cung Cấp'),
+                      label: const Text('+ Nhà cung cấp'),
                     ),
                     FilledButton.icon(
+                      style: FilledButton.styleFrom(visualDensity: VisualDensity.compact),
                       onPressed: () => showProductDialog(context, ctrl),
                       icon: const Icon(Icons.add_box_outlined, size: 16),
-                      label: const Text('+ Mặt Hàng Mới'),
+                      label: const Text('+ Mặt hàng'),
                     ),
                   ],
                 ),
@@ -179,7 +186,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -229,7 +236,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -283,7 +290,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade300),
+            side: BorderSide(color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade300),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -291,33 +298,42 @@ class _CatalogScreenState extends State<CatalogScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                      child: TextField(
-                        controller: _searchCtrl,
-                        decoration: InputDecoration(
-                          hintText: 'Tìm mặt hàng, mã SKU...',
-                          prefixIcon: const Icon(Icons.search, size: 18),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear, size: 18),
-                                  onPressed: () {
-                                    _searchCtrl.clear();
-                                    setState(() => _searchQuery = '');
-                                  },
-                                )
-                              : null,
-                          isDense: true,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      child: SizedBox(
+                        height: 44,
+                        child: TextField(
+                          controller: _searchCtrl,
+                          decoration: InputDecoration(
+                            hintText: 'Tìm mặt hàng, mã SKU...',
+                            prefixIcon: const Icon(Icons.search, size: 18),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 16),
+                                    onPressed: () {
+                                      _searchCtrl.clear();
+                                      setState(() => _searchQuery = '');
+                                    },
+                                  )
+                                : null,
+                            isDense: true,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onChanged: (v) => setState(() => _searchQuery = v),
                         ),
-                        onChanged: (v) => setState(() => _searchQuery = v),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Sắp hết kho', style: TextStyle(fontSize: 12)),
-                      selected: _lowStockOnly,
-                      onSelected: (v) => setState(() => _lowStockOnly = v),
+                    SizedBox(
+                      height: 44,
+                      child: FilterChip(
+                        visualDensity: VisualDensity.compact,
+                        label: const Text('Sắp hết kho', style: TextStyle(fontSize: 12)),
+                        selected: _lowStockOnly,
+                        onSelected: (v) => setState(() => _lowStockOnly = v),
+                      ),
                     ),
                   ],
                 ),
@@ -406,17 +422,24 @@ class _CatalogScreenState extends State<CatalogScreen> {
                             ],
                           ),
                           const Divider(),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            runSpacing: 6,
                             children: [
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   TextButton.icon(
+                                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                                     onPressed: () => showProductDialog(context, ctrl, editProduct: p),
                                     icon: const Icon(Icons.edit, size: 16),
                                     label: const Text('Sửa'),
                                   ),
+                                  const SizedBox(width: 4),
                                   TextButton.icon(
+                                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                                     onPressed: () => ctrl.deleteProduct(p.id),
                                     icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
                                     label: const Text('Xóa', style: TextStyle(color: Colors.red)),
@@ -424,23 +447,34 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                 ],
                               ),
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  OutlinedButton(
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    ),
                                     onPressed: () {
                                       ctrl.setPosOrderType('PURCHASE');
                                       ctrl.addProductToCart(p);
                                       widget.onSwitchToPos();
                                     },
-                                    child: const Text('+ Nhập kho'),
+                                    icon: const Icon(Icons.add, size: 14),
+                                    label: const Text('Nhập kho', style: TextStyle(fontSize: 12)),
                                   ),
                                   const SizedBox(width: 6),
-                                  FilledButton(
+                                  FilledButton.icon(
+                                    style: FilledButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    ),
                                     onPressed: () {
                                       ctrl.setPosOrderType('SALE');
                                       ctrl.addProductToCart(p);
                                       widget.onSwitchToPos();
                                     },
-                                    child: const Text('🛒 Bán ngay'),
+                                    icon: const Icon(Icons.shopping_cart_checkout, size: 14),
+                                    label: const Text('Bán ngay', style: TextStyle(fontSize: 12)),
                                   ),
                                 ],
                               ),

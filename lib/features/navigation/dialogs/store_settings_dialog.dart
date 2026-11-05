@@ -126,6 +126,7 @@ void showStoreSettingsDialog(BuildContext context, BusinessController ctrl) {
                 ),
                 const SizedBox(height: 8),
                 SegmentedButton<String>(
+                  showSelectedIcon: false,
                   segments: const [
                     ButtonSegment(
                       value: 'system',

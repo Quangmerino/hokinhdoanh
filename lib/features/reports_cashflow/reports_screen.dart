@@ -64,6 +64,7 @@ class _ReportsCashflowScreenState extends State<ReportsCashflowScreen> {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 SegmentedButton<String>(
+                  showSelectedIcon: false,
                   segments: const [
                     ButtonSegment(value: 'DAY', label: Text('Ngày')),
                     ButtonSegment(value: 'WEEK', label: Text('Tuần')),
@@ -76,14 +77,18 @@ class _ReportsCashflowScreenState extends State<ReportsCashflowScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    OutlinedButton(
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
                       onPressed: () => showManualCashModal(context, ctrl, 'IN'),
-                      child: const Text('+ Phiếu Thu'),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Phiếu Thu'),
                     ),
                     const SizedBox(width: 6),
-                    OutlinedButton(
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact),
                       onPressed: () => showManualCashModal(context, ctrl, 'OUT'),
-                      child: const Text('- Phiếu Chi'),
+                      icon: const Icon(Icons.remove, size: 16),
+                      label: const Text('Phiếu Chi'),
                     ),
                   ],
                 ),
@@ -100,12 +105,12 @@ class _ReportsCashflowScreenState extends State<ReportsCashflowScreen> {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 8,
           mainAxisSpacing: 8,
-          childAspectRatio: 1.9,
+          childAspectRatio: 1.6,
           children: [
             _buildKpiBox(context, '1. Tổng Doanh Thu', AppFormatters.formatVnd(totalRev), isDark ? Colors.teal.shade300 : Colors.teal.shade900),
             _buildKpiBox(context, '2. Lợi Nhuận Gộp', AppFormatters.formatVnd(grossProfit), isDark ? Colors.green.shade300 : Colors.green.shade700),
             _buildKpiBox(context, '3. Dòng Tiền VÀO', AppFormatters.formatVnd(cashIn), isDark ? Colors.blue.shade300 : Colors.blue.shade700),
-            _buildKpiBox(context, '4. Dòng Tiền RA', '${AppFormatters.formatVnd(cashOut)} (Thuần: ${AppFormatters.formatVnd(netCash)})', isDark ? Colors.red.shade300 : Colors.red.shade700),
+            _buildKpiBox(context, '4. Dòng Tiền RA', '${AppFormatters.formatVnd(cashOut)}\n(Thuần: ${AppFormatters.formatVnd(netCash)})', isDark ? Colors.red.shade300 : Colors.red.shade700),
           ],
         ),
         const SizedBox(height: 12),

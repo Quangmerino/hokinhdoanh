@@ -204,33 +204,31 @@ void showCollectDebtDialog(BuildContext context, BusinessController ctrl, Househ
 
                   // SỐ VỎ TRẢ
                   if (hh.containerOwed > 0) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: shellCtrl,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Số vỏ mang trả',
-                              prefixIcon: Icon(Icons.repeat_outlined),
-                              suffixText: 'vỏ',
-                              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                    TextFormField(
+                      controller: shellCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Số vỏ mang trả',
+                        prefixIcon: const Icon(Icons.repeat_outlined),
+                        suffixIcon: Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
                             ),
-                            validator: (v) {
-                              final num = int.tryParse(v ?? '') ?? 0;
-                              if (num < 0) return 'Số vỏ không hợp lệ';
-                              if (num > hh.containerOwed) return 'Tối đa ${hh.containerOwed} vỏ';
-                              return null;
-                            },
-                            onChanged: (_) => setDialogState(() {}),
+                            onPressed: () => setDialogState(() => shellCtrl.text = hh.containerOwed.toString()),
+                            child: const Text('Trả hết vỏ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        OutlinedButton(
-                          onPressed: () => setDialogState(() => shellCtrl.text = hh.containerOwed.toString()),
-                          child: const Text('Trả hết vỏ'),
-                        ),
-                      ],
+                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                      ),
+                      validator: (v) {
+                        final num = int.tryParse(v ?? '') ?? 0;
+                        if (num < 0) return 'Số vỏ không hợp lệ';
+                        if (num > hh.containerOwed) return 'Tối đa ${hh.containerOwed} vỏ';
+                        return null;
+                      },
+                      onChanged: (_) => setDialogState(() {}),
                     ),
                     const SizedBox(height: 12),
                   ],

@@ -60,9 +60,18 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SegmentedButton<String>(
+                  showSelectedIcon: false,
                   segments: const [
-                    ButtonSegment(value: 'SALE', label: Text('📤 Xuất Bán Hàng', style: TextStyle(fontWeight: FontWeight.bold))),
-                    ButtonSegment(value: 'PURCHASE', label: Text('📥 Nhập Kho Từ NCC', style: TextStyle(fontWeight: FontWeight.bold))),
+                    ButtonSegment(
+                      value: 'SALE',
+                      icon: Icon(Icons.point_of_sale, size: 18),
+                      label: Text('Bán Hàng', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    ButtonSegment(
+                      value: 'PURCHASE',
+                      icon: Icon(Icons.move_to_inbox, size: 18),
+                      label: Text('Nhập Kho', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
                   ],
                   selected: {ctrl.posOrderType},
                   onSelectionChanged: (v) {
@@ -220,12 +229,15 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                                   ),
                                 ],
                               ),
-                              Text(
-                                AppFormatters.formatVnd(item.lineTotal),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 15,
-                                  color: isDark ? Colors.teal.shade300 : Colors.teal.shade800,
+                              Flexible(
+                                child: Text(
+                                  AppFormatters.formatVnd(item.lineTotal),
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 15,
+                                    color: isDark ? Colors.teal.shade300 : Colors.teal.shade800,
+                                  ),
                                 ),
                               ),
                             ],
@@ -445,45 +457,49 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                 const SizedBox(height: 10),
 
                 // SỐ TIỀN TRẢ NGAY & HÌNH THỨC (FORMAT 2.000.000 VNĐ)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 6,
-                      child: TextFormField(
-                        controller: _paidCtrl,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          CurrencyInputFormatter(),
-                        ],
-                        decoration: InputDecoration(
-                          labelText: 'Số tiền trả ngay *',
-                          prefixIcon: const Icon(Icons.payments_outlined),
-                          suffixText: 'VNĐ',
-                          suffixStyle: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.teal.shade300 : Colors.teal.shade800,
-                          ),
-                          border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                        ),
-                        onChanged: (_) => setState(() {}),
-                      ),
+                TextFormField(
+                  controller: _paidCtrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    CurrencyInputFormatter(),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: 'Số tiền trả ngay *',
+                    prefixIcon: const Icon(Icons.payments_outlined),
+                    suffixText: 'VNĐ',
+                    suffixStyle: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.teal.shade300 : Colors.teal.shade800,
                     ),
+                    border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 10),
+
+                // HÌNH THỨC THANH TOÁN
+                Row(
+                  children: [
+                    const Text('Hình thức:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(width: 8),
                     Expanded(
-                      flex: 4,
-                      child: DropdownButtonFormField<String>(
-                        value: _paymentMethod,
-                        decoration: const InputDecoration(
-                          labelText: 'Phương thức',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                        ),
-                        items: const [
-                          DropdownMenuItem(value: 'CASH', child: Text('💵 Tiền mặt')),
-                          DropdownMenuItem(value: 'BANK', child: Text('🏦 Chuyển khoản')),
+                      child: SegmentedButton<String>(
+                        showSelectedIcon: false,
+                        segments: const [
+                          ButtonSegment(
+                            value: 'CASH',
+                            icon: Icon(Icons.payments_outlined, size: 16),
+                            label: Text('Tiền mặt', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                          ButtonSegment(
+                            value: 'BANK',
+                            icon: Icon(Icons.account_balance_outlined, size: 16),
+                            label: Text('Chuyển khoản', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
                         ],
-                        onChanged: (v) => setState(() => _paymentMethod = v ?? 'CASH'),
+                        selected: {_paymentMethod},
+                        onSelectionChanged: (v) => setState(() => _paymentMethod = v.first),
                       ),
                     ),
                   ],
