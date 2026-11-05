@@ -7,3 +7,4 @@ export 'household_model.dart';
 export 'cart_item_model.dart';
 export 'order_record_model.dart';
 export 'cash_tx_model.dart';
+export 'user_model.dart';

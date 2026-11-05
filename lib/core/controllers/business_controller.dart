@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import '../database/app_database.dart';
 import '../models/models.dart';
 import '../utils/formatters.dart';
+import '../utils/security_helper.dart';
 
 class BusinessController extends ChangeNotifier {
   final LocalSqliteDatabase _db = LocalSqliteDatabase.instance;
+
+  UserModel? currentUser;
+  bool get isAuthenticated => currentUser != null;
 
   StoreConfig storeConfig = const StoreConfig();
   List<CategoryNode> categories = [];
@@ -34,6 +38,7 @@ class BusinessController extends ChangeNotifier {
 
   Future<void> init() async {
     try {
+      currentUser = await _db.getActiveSessionUser();
       storeConfig = await _db.loadStoreConfig();
       categories = await _db.loadCategories();
       suppliers = await _db.loadSuppliers();
@@ -55,6 +60,152 @@ class BusinessController extends ChangeNotifier {
     }
     isInitialized = true;
     notifyListeners();
+  }
+
+  // ==================== AUTHENTICATION & SECURITY ====================
+
+  String? _recoveryOtp;
+  String? _recoveryIdentifier;
+  String? _recoveryChannel;
+  DateTime? _recoveryOtpExpiry;
+
+  String? get lastRecoveryOtp => _recoveryOtp;
+  String? get lastRecoveryChannel => _recoveryChannel;
+  String? get lastRecoveryIdentifier => _recoveryIdentifier;
+
+  Future<String?> registerUser({
+    required String fullName,
+    required String phone,
+    required String email,
+    required String password,
+    required String storeName,
+    String recoveryChannel = 'sms',
+  }) async {
+    final existingPhone = await _db.findUserByIdentifier(phone);
+    if (existingPhone != null) {
+      return 'Số điện thoại này đã được đăng ký tài khoản.';
+    }
+    final existingEmail = await _db.findUserByIdentifier(email);
+    if (existingEmail != null) {
+      return 'Địa chỉ email/Gmail này đã được đăng ký tài khoản.';
+    }
+
+    final hash = SecurityHelper.hashPassword(password);
+    final newUser = UserModel(
+      id: 0,
+      fullName: fullName.trim(),
+      phone: phone.trim(),
+      email: email.trim().toLowerCase(),
+      passwordHash: hash,
+      storeName: storeName.trim(),
+      recoveryChannel: recoveryChannel,
+      createdAt: DateTime.now().toIso8601String(),
+    );
+
+    final created = await _db.registerUser(newUser);
+    if (created != null) {
+      currentUser = created;
+      if (storeName.trim().isNotEmpty) {
+        await updateStoreConfig(storeConfig.copyWith(storeName: storeName.trim()));
+      }
+      notifyListeners();
+      return null; // Thành công
+    }
+    return 'Không thể tạo tài khoản. Vui lòng thử lại sau.';
+  }
+
+  Future<String?> loginUser({
+    required String identifier,
+    required String password,
+  }) async {
+    final cleanId = identifier.trim().toLowerCase();
+    final user = await _db.findUserByIdentifier(cleanId);
+    if (user == null) {
+      return 'Không tìm thấy tài khoản với SĐT hoặc Email "$cleanId".';
+    }
+    final hash = SecurityHelper.hashPassword(password);
+    if (user.passwordHash != hash) {
+      return 'Mật khẩu không chính xác. Vui lòng kiểm tra lại.';
+    }
+
+    await _db.saveAuthSession(user.id);
+    currentUser = user;
+    if (user.storeName.isNotEmpty && storeConfig.storeName == 'HỘ KINH DOANH CỦA TÔI') {
+      await updateStoreConfig(storeConfig.copyWith(storeName: user.storeName));
+    }
+    notifyListeners();
+    return null; // Thành công
+  }
+
+  Future<void> logout() async {
+    await _db.clearAuthSession();
+    currentUser = null;
+    posCart.clear();
+    _recoveryOtp = null;
+    _recoveryIdentifier = null;
+    _recoveryOtpExpiry = null;
+    notifyListeners();
+  }
+
+  Future<Map<String, dynamic>> requestPasswordRecovery({
+    required String identifier,
+    required String channel, // 'sms', 'email', 'whatsapp', 'facebook'
+  }) async {
+    final cleanId = identifier.trim().toLowerCase();
+    final user = await _db.findUserByIdentifier(cleanId);
+    if (user == null) {
+      return {
+        'success': false,
+        'error': 'Không tìm thấy tài khoản nào khớp với "$identifier".',
+      };
+    }
+
+    // Sinh mã ngẫu nhiên 6 chữ số
+    final randomOtp = (100000 + (DateTime.now().microsecondsSinceEpoch % 900000)).toString();
+    _recoveryOtp = randomOtp;
+    _recoveryIdentifier = cleanId;
+    _recoveryChannel = channel;
+    _recoveryOtpExpiry = DateTime.now().add(const Duration(minutes: 5));
+
+    final destination = channel == 'email' ? user.email : user.phone;
+
+    return {
+      'success': true,
+      'otp': randomOtp,
+      'user': user,
+      'channel': channel,
+      'destination': destination,
+    };
+  }
+
+  bool verifyRecoveryOtp({
+    required String identifier,
+    required String code,
+  }) {
+    if (_recoveryOtp == null || _recoveryOtpExpiry == null) return false;
+    if (DateTime.now().isAfter(_recoveryOtpExpiry!)) return false;
+    if (_recoveryIdentifier != identifier.trim().toLowerCase()) return false;
+    return _recoveryOtp == code.trim();
+  }
+
+  Future<bool> resetPassword({
+    required String identifier,
+    required String newPassword,
+  }) async {
+    final cleanId = identifier.trim().toLowerCase();
+    final newHash = SecurityHelper.hashPassword(newPassword);
+    final success = await _db.updatePasswordByIdentifier(cleanId, newHash);
+    if (success) {
+      _recoveryOtp = null;
+      _recoveryIdentifier = null;
+      _recoveryOtpExpiry = null;
+      if (currentUser != null &&
+          (currentUser!.phone == cleanId || currentUser!.email.toLowerCase() == cleanId)) {
+        currentUser = currentUser!.copyWith(passwordHash: newHash);
+      }
+      notifyListeners();
+    }
+    return success;
   }
 
   // Computed KPIs

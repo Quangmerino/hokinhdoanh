@@ -5,6 +5,7 @@ import '../catalog/catalog_screen.dart';
 import '../household_debt/household_debt_screen.dart';
 import '../pos_order/pos_screen.dart';
 import '../reports_cashflow/reports_screen.dart';
+import '../auth/widgets/user_profile_dialog.dart';
 import 'dialogs/store_settings_dialog.dart';
 
 class MainNavigationShell extends StatefulWidget {
@@ -106,6 +107,20 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 ),
               ),
             ],
+          ),
+          IconButton(
+            tooltip: 'Tài khoản & Đăng xuất',
+            icon: CircleAvatar(
+              radius: 14,
+              backgroundColor: Colors.teal.shade200,
+              child: Text(
+                ctrl.currentUser?.fullName.isNotEmpty == true
+                    ? ctrl.currentUser!.fullName[0].toUpperCase()
+                    : '👤',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
+              ),
+            ),
+            onPressed: () => showUserProfileDialog(context, ctrl),
           ),
           IconButton(
             tooltip: 'Cài đặt cửa hàng & VietQR',

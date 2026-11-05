@@ -22,8 +22,54 @@ class LocalSqliteDatabase {
         try {
           await db.execute("ALTER TABLE store_settings ADD COLUMN theme_mode TEXT DEFAULT 'system'");
         } catch (_) {}
+        try {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              full_name TEXT NOT NULL,
+              phone TEXT NOT NULL UNIQUE,
+              email TEXT NOT NULL UNIQUE,
+              password_hash TEXT NOT NULL,
+              store_name TEXT NOT NULL,
+              recovery_channel TEXT DEFAULT 'sms',
+              created_at TEXT NOT NULL
+            )
+          ''');
+        } catch (_) {}
+        try {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS auth_session (
+              id INTEGER PRIMARY KEY CHECK (id = 1),
+              user_id INTEGER,
+              logged_in_at TEXT,
+              FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+            )
+          ''');
+        } catch (_) {}
       },
       onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT NOT NULL,
+            phone TEXT NOT NULL UNIQUE,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            store_name TEXT NOT NULL,
+            recovery_channel TEXT DEFAULT 'sms',
+            created_at TEXT NOT NULL
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE auth_session (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            user_id INTEGER,
+            logged_in_at TEXT,
+            FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+          )
+        ''');
+
         await db.execute('''
           CREATE TABLE store_settings (
             id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -266,5 +312,113 @@ class LocalSqliteDatabase {
       await txn.delete('suppliers');
       await txn.delete('categories');
     });
+  }
+
+  // ==================== AUTHENTICATION & USERS ====================
+
+  Future<UserModel?> registerUser(UserModel user) async {
+    final db = await database;
+    final cleanPhone = user.phone.trim();
+    final cleanEmail = user.email.trim().toLowerCase();
+
+    // Check if phone or email already exists
+    final existing = await db.query(
+      'users',
+      where: 'phone = ? OR LOWER(email) = ?',
+      whereArgs: [cleanPhone, cleanEmail],
+    );
+    if (existing.isNotEmpty) {
+      return null;
+    }
+
+    final id = await db.insert('users', {
+      'full_name': user.fullName.trim(),
+      'phone': cleanPhone,
+      'email': cleanEmail,
+      'password_hash': user.passwordHash,
+      'store_name': user.storeName.trim(),
+      'recovery_channel': user.recoveryChannel,
+      'created_at': user.createdAt,
+    });
+
+    final createdUser = user.copyWith(id: id);
+    await saveAuthSession(id);
+    return createdUser;
+  }
+
+  Future<UserModel?> findUserByIdentifier(String identifier) async {
+    final db = await database;
+    final clean = identifier.trim().toLowerCase();
+    final rows = await db.query(
+      'users',
+      where: 'phone = ? OR LOWER(email) = ?',
+      whereArgs: [clean, clean],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return UserModel.fromMap(rows.first);
+  }
+
+  Future<UserModel?> loginUser(String identifier, String passwordHash) async {
+    final db = await database;
+    final clean = identifier.trim().toLowerCase();
+    final rows = await db.query(
+      'users',
+      where: '(phone = ? OR LOWER(email) = ?) AND password_hash = ?',
+      whereArgs: [clean, clean, passwordHash],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    final user = UserModel.fromMap(rows.first);
+    await saveAuthSession(user.id);
+    return user;
+  }
+
+  Future<UserModel?> getActiveSessionUser() async {
+    final db = await database;
+    final sessions = await db.query('auth_session', where: 'id = 1', limit: 1);
+    if (sessions.isEmpty || sessions.first['user_id'] == null) {
+      return null;
+    }
+    final userId = sessions.first['user_id'] as int;
+    final users = await db.query('users', where: 'id = ?', whereArgs: [userId], limit: 1);
+    if (users.isEmpty) return null;
+    return UserModel.fromMap(users.first);
+  }
+
+  Future<void> saveAuthSession(int userId) async {
+    final db = await database;
+    await db.insert('auth_session', {
+      'id': 1,
+      'user_id': userId,
+      'logged_in_at': DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> clearAuthSession() async {
+    final db = await database;
+    await db.insert('auth_session', {
+      'id': 1,
+      'user_id': null,
+      'logged_in_at': null,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<bool> updatePasswordByIdentifier(String identifier, String newPasswordHash) async {
+    final db = await database;
+    final clean = identifier.trim().toLowerCase();
+    final count = await db.update(
+      'users',
+      {'password_hash': newPasswordHash},
+      where: 'phone = ? OR LOWER(email) = ?',
+      whereArgs: [clean, clean],
+    );
+    return count > 0;
+  }
+
+  Future<List<UserModel>> getAllUsers() async {
+    final db = await database;
+    final rows = await db.query('users', orderBy: 'id ASC');
+    return rows.map(UserModel.fromMap).toList();
   }
 }

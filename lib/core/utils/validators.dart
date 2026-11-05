@@ -63,4 +63,47 @@ class Validators {
     }
     return null;
   }
+
+  static String? requiredPhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập số điện thoại';
+    }
+    return phone(value);
+  }
+
+  static String? email(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!regex.hasMatch(value.trim())) {
+      return 'Địa chỉ email / Gmail không đúng định dạng';
+    }
+    return null;
+  }
+
+  static String? requiredEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập địa chỉ Gmail / Email';
+    }
+    return email(value);
+  }
+
+  static String? password(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng nhập mật khẩu';
+    }
+    if (value.length < 6) {
+      return 'Mật khẩu phải có ít nhất 6 ký tự';
+    }
+    return null;
+  }
+
+  static String? confirmPassword(String? value, String original) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng xác nhận mật khẩu';
+    }
+    if (value != original) {
+      return 'Mật khẩu xác nhận không khớp';
+    }
+    return null;
+  }
 }

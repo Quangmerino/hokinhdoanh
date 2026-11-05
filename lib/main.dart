@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/controllers/business_controller.dart';
+import 'features/auth/screens/login_screen.dart';
 import 'features/navigation/main_navigation_shell.dart';
 
 // Exports for convenience and backwards compatibility
@@ -7,6 +8,9 @@ export 'core/controllers/business_controller.dart';
 export 'core/database/app_database.dart';
 export 'core/models/models.dart';
 export 'core/utils/formatters.dart';
+export 'features/auth/screens/login_screen.dart';
+export 'features/auth/screens/register_screen.dart';
+export 'features/auth/screens/forgot_password_screen.dart';
 export 'features/catalog/catalog_screen.dart';
 export 'features/household_debt/household_debt_screen.dart';
 export 'features/navigation/main_navigation_shell.dart';
@@ -87,7 +91,9 @@ class _HoKinhDoanhAppState extends State<HoKinhDoanhApp> {
           useMaterial3: true,
         ),
         themeMode: _controller.themeMode,
-        home: MainNavigationShell(controller: _controller),
+        home: _controller.isAuthenticated
+            ? MainNavigationShell(controller: _controller)
+            : LoginScreen(controller: _controller),
       ),
     );
   }
