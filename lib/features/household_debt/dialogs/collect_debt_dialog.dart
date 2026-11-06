@@ -235,7 +235,7 @@ void showCollectDebtDialog(BuildContext context, BusinessController ctrl, Househ
 
                   // HÌNH THỨC THANH TOÁN
                   DropdownButtonFormField<String>(
-                    value: method,
+                    initialValue: method,
                     decoration: const InputDecoration(
                       labelText: 'Hình thức thanh toán',
                       prefixIcon: Icon(Icons.payment),

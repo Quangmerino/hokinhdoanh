@@ -266,7 +266,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
               children: [
                 if (isSale) ...[
                   DropdownButtonFormField<int>(
-                    value: ctrl.households.any((h) => h.id == _selectedHouseholdId) ? _selectedHouseholdId : 0,
+                    initialValue: ctrl.households.any((h) => h.id == _selectedHouseholdId) ? _selectedHouseholdId : 0,
                     decoration: const InputDecoration(
                       labelText: 'Chọn Hộ gia đình mua hàng *',
                       prefixIcon: Icon(Icons.family_restroom),
@@ -293,7 +293,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                   if (selectedHh != null) ...[
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      value: selectedHh.members.contains(_selectedBuyerMember)
+                      initialValue: selectedHh.members.contains(_selectedBuyerMember)
                           ? _selectedBuyerMember
                           : selectedHh.members.firstOrNull,
                       decoration: const InputDecoration(
@@ -310,7 +310,7 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                 ] else ...[
                   if (ctrl.suppliers.isNotEmpty)
                     DropdownButtonFormField<int>(
-                      value: _selectedSupplierId ?? ctrl.suppliers.first.id,
+                      initialValue: _selectedSupplierId ?? ctrl.suppliers.first.id,
                       decoration: const InputDecoration(
                         labelText: 'Chọn Nhà cung cấp nhập hàng',
                         prefixIcon: Icon(Icons.local_shipping_outlined),

@@ -73,7 +73,7 @@ void showManualCashModal(BuildContext context, BusinessController ctrl, String f
                   const SizedBox(height: 12),
                   if (category == 'SUPPLIER_DEBT_PAY') ...[
                     DropdownButtonFormField<int>(
-                      value: selectedSupId,
+                      initialValue: selectedSupId,
                       decoration: const InputDecoration(
                         labelText: 'Chọn Nhà cung cấp cần trả nợ',
                         prefixIcon: Icon(Icons.local_shipping_outlined),

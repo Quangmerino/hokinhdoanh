@@ -149,11 +149,16 @@ class BusinessController extends ChangeNotifier {
       final token = res['accessToken'] as String?;
 
       // Đồng bộ vào cơ sở dữ liệu nội bộ thiết bị để hỗ trợ ngoại tuyến
-      final hash = SecurityHelper.hashPassword(password);
-      final localUser = registeredUser.copyWith(passwordHash: hash);
-      final created = await _db.registerUser(localUser);
-      currentUser = created ?? localUser;
-      await _db.saveAuthSession(currentUser!.id, token: token);
+      try {
+        final hash = SecurityHelper.hashPassword(password);
+        final localUser = registeredUser.copyWith(passwordHash: hash);
+        final created = await _db.registerUser(localUser);
+        currentUser = created ?? localUser;
+        await _db.saveAuthSession(currentUser!.id, token: token);
+      } catch (_) {
+        // Dự phòng cho nền tảng Web hoặc khi SQLite cục bộ không khả dụng
+        currentUser = registeredUser;
+      }
 
       if (storeName.trim().isNotEmpty) {
         await updateStoreConfig(storeConfig.copyWith(storeName: storeName.trim()));
@@ -213,11 +218,16 @@ class BusinessController extends ChangeNotifier {
       final loggedInUser = res['user'] as UserModel;
       final token = res['accessToken'] as String?;
 
-      final hash = SecurityHelper.hashPassword(password);
-      final localUser = loggedInUser.copyWith(passwordHash: hash);
-      final savedLocal = await _db.registerUser(localUser);
-      currentUser = savedLocal ?? localUser;
-      await _db.saveAuthSession(currentUser!.id, token: token);
+      try {
+        final hash = SecurityHelper.hashPassword(password);
+        final localUser = loggedInUser.copyWith(passwordHash: hash);
+        final savedLocal = await _db.registerUser(localUser);
+        currentUser = savedLocal ?? localUser;
+        await _db.saveAuthSession(currentUser!.id, token: token);
+      } catch (_) {
+        // Dự phòng cho nền tảng Web hoặc khi SQLite cục bộ không khả dụng
+        currentUser = loggedInUser;
+      }
 
       if (currentUser!.storeName.isNotEmpty && storeConfig.storeName == 'HỘ KINH DOANH CỦA TÔI') {
         await updateStoreConfig(storeConfig.copyWith(storeName: currentUser!.storeName));
@@ -249,7 +259,9 @@ class BusinessController extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await _db.clearAuthSession();
+    try {
+      await _db.clearAuthSession();
+    } catch (_) {}
     apiClient.setAccessToken(null);
     currentUser = null;
     posCart.clear();
@@ -356,15 +368,19 @@ class BusinessController extends ChangeNotifier {
         newPassword: newPassword,
       );
       if (res['success'] == true) {
-        final newHash = SecurityHelper.hashPassword(newPassword);
-        await _db.updatePasswordByIdentifier(cleanId, newHash);
+        try {
+          final newHash = SecurityHelper.hashPassword(newPassword);
+          await _db.updatePasswordByIdentifier(cleanId, newHash);
+        } catch (_) {
+          // Dự phòng cho nền tảng Web hoặc khi SQLite không khả dụng
+        }
         _recoveryOtp = null;
         _recoveryIdentifier = null;
         _recoveryOtpExpiry = null;
         _verifiedOtpCode = null;
         if (currentUser != null &&
             (currentUser!.phone == cleanId || currentUser!.email.toLowerCase() == cleanId)) {
-          currentUser = currentUser!.copyWith(passwordHash: newHash);
+          currentUser = currentUser!.copyWith(passwordHash: SecurityHelper.hashPassword(newPassword));
         }
         notifyListeners();
         return true;
@@ -373,20 +389,24 @@ class BusinessController extends ChangeNotifier {
     } on ApiException {
       return false;
     } catch (_) {
-      final newHash = SecurityHelper.hashPassword(newPassword);
-      final success = await _db.updatePasswordByIdentifier(cleanId, newHash);
-      if (success) {
-        _recoveryOtp = null;
-        _recoveryIdentifier = null;
-        _recoveryOtpExpiry = null;
-        _verifiedOtpCode = null;
-        if (currentUser != null &&
-            (currentUser!.phone == cleanId || currentUser!.email.toLowerCase() == cleanId)) {
-          currentUser = currentUser!.copyWith(passwordHash: newHash);
+      try {
+        final newHash = SecurityHelper.hashPassword(newPassword);
+        final success = await _db.updatePasswordByIdentifier(cleanId, newHash);
+        if (success) {
+          _recoveryOtp = null;
+          _recoveryIdentifier = null;
+          _recoveryOtpExpiry = null;
+          _verifiedOtpCode = null;
+          if (currentUser != null &&
+              (currentUser!.phone == cleanId || currentUser!.email.toLowerCase() == cleanId)) {
+            currentUser = currentUser!.copyWith(passwordHash: newHash);
+          }
+          notifyListeners();
         }
-        notifyListeners();
+        return success;
+      } catch (_) {
+        return false;
       }
-      return success;
     }
   }
 

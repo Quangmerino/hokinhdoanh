@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/controllers/business_controller.dart';
 import '../../../core/utils/validators.dart';
+import 'login_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   final BusinessController controller;
@@ -139,24 +140,36 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (!_step3FormKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
-    final success = await widget.controller.resetPassword(
-      identifier: _identifierCtrl.text.trim(),
-      code: _otpCtrl.text.trim(),
-      newPassword: _newPassCtrl.text,
-    );
-
-    setState(() => _isLoading = false);
+    bool success = false;
+    try {
+      success = await widget.controller.resetPassword(
+        identifier: _identifierCtrl.text.trim(),
+        code: _otpCtrl.text.trim(),
+        newPassword: _newPassCtrl.text,
+      );
+    } catch (_) {
+      success = false;
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
 
     if (success) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('🎉 Cập nhật mật khẩu mới thành công! Vui lòng đăng nhập lại.'),
-          backgroundColor: Colors.green,
+          content: Text('🎉 Đổi mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.'),
+          backgroundColor: Color(0xFF0F766E),
           behavior: SnackBarBehavior.floating,
         ),
       );
-      Navigator.pop(context);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => LoginScreen(controller: widget.controller),
+        ),
+        (route) => false,
+      );
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

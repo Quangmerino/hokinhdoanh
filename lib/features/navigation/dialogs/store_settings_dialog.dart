@@ -84,7 +84,7 @@ void showStoreSettingsDialog(BuildContext context, BusinessController ctrl) {
 
                 // Ngân hàng
                 DropdownButtonFormField<String>(
-                  value: commonBanks.contains(bankCtrl.text) ? bankCtrl.text : commonBanks.first,
+                  initialValue: commonBanks.contains(bankCtrl.text) ? bankCtrl.text : commonBanks.first,
                   decoration: const InputDecoration(
                     labelText: 'Tên Ngân hàng',
                     prefixIcon: Icon(Icons.account_balance),

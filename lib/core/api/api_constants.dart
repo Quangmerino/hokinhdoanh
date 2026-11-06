@@ -1,11 +1,20 @@
 import 'package:flutter/foundation.dart';
 
 class ApiConstants {
+  /// Cho phép truyền URL server thật khi build app:
+  /// flutter build apk --dart-define=API_URL=https://your-domain.com/api
+  /// flutter build web --dart-define=API_URL=https://your-domain.com/api
+  static const String _envApiUrl = String.fromEnvironment('API_URL', defaultValue: '');
+
   /// Base URL của Backend NestJS API
   /// Mặc định:
+  /// - Nếu có truyền biến môi trường API_URL -> sử dụng URL đó
   /// - Windows / macOS / Linux / Web: http://localhost:3000/api
   /// - Android Emulator: http://10.0.2.2:3000/api
   static String get baseUrl {
+    if (_envApiUrl.isNotEmpty) {
+      return _envApiUrl;
+    }
     if (kIsWeb) {
       return 'http://localhost:3000/api';
     }

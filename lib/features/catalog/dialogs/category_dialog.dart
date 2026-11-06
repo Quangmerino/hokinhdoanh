@@ -46,7 +46,7 @@ void showCategoryDialog(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 DropdownButtonFormField<int?>(
-                  value: forbiddenIds.contains(parentId) ? null : parentId,
+                  initialValue: forbiddenIds.contains(parentId) ? null : parentId,
                   decoration: const InputDecoration(
                     labelText: 'Thuộc danh mục cha',
                     prefixIcon: Icon(Icons.account_tree_outlined),

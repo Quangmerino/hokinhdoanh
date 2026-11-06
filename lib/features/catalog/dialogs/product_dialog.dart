@@ -125,7 +125,7 @@ void showProductDialog(
                   // Danh mục & Nhà cung cấp
                   if (ctrl.categories.isNotEmpty)
                     DropdownButtonFormField<int>(
-                      value: ctrl.categories.any((c) => c.id == selectedCatId)
+                      initialValue: ctrl.categories.any((c) => c.id == selectedCatId)
                           ? selectedCatId
                           : ctrl.categories.first.id,
                       decoration: const InputDecoration(
@@ -142,7 +142,7 @@ void showProductDialog(
 
                   if (ctrl.suppliers.isNotEmpty)
                     DropdownButtonFormField<int>(
-                      value: ctrl.suppliers.any((s) => s.id == selectedSupId)
+                      initialValue: ctrl.suppliers.any((s) => s.id == selectedSupId)
                           ? selectedSupId
                           : ctrl.suppliers.first.id,
                       decoration: const InputDecoration(

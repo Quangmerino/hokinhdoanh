@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/controllers/business_controller.dart';
 import '../../../core/utils/validators.dart';
+import '../../navigation/main_navigation_shell.dart';
 
 class RegisterScreen extends StatefulWidget {
   final BusinessController controller;
@@ -73,7 +74,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
-      Navigator.pop(context); // Return or auto-navigate via isAuthenticated
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => MainNavigationShell(controller: widget.controller),
+        ),
+        (route) => false,
+      );
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

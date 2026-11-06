@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/controllers/business_controller.dart';
 import '../../../core/utils/validators.dart';
+import '../../navigation/main_navigation_shell.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 
@@ -48,6 +49,12 @@ class _LoginScreenState extends State<LoginScreen> {
           backgroundColor: const Color(0xFF0F766E),
           behavior: SnackBarBehavior.floating,
         ),
+      );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => MainNavigationShell(controller: widget.controller),
+        ),
+        (route) => false,
       );
     } else {
       if (!mounted) return;
