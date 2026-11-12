@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/api/api_constants.dart';
 import '../../../core/controllers/business_controller.dart';
 import '../../../core/models/models.dart';
 import '../../../core/utils/validators.dart';
@@ -146,6 +147,48 @@ void showStoreSettingsDialog(BuildContext context, BusinessController ctrl) {
                   ],
                   selected: {selectedTheme},
                   onSelectionChanged: (v) => setDialogState(() => selectedTheme = v.first),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  '🌐 Môi Trường Máy Chủ (Backend API)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2F1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF0F766E).withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.cloud_done, size: 18, color: Color(0xFF0F766E)),
+                          SizedBox(width: 8),
+                          Text(
+                            'LIVE PRODUCTION (Render Cloud)',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: Color(0xFF0F766E),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        ApiConstants.baseUrl,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                          color: Color(0xFF134E4A),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

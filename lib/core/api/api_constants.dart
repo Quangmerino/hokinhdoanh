@@ -1,35 +1,40 @@
 import 'package:flutter/foundation.dart';
 
 class ApiConstants {
+  /// Production Live API URL trên Cloud (Render & Neon PostgreSQL)
+  static const String liveProductionUrl = 'https://hokinhdoanh-api.onrender.com/api';
+
+  /// URL cục bộ khi phát triển trên máy (Local development)
+  static const String localHostUrl = 'http://localhost:3000/api';
+  static const String localAndroidEmulatorUrl = 'http://10.0.2.2:3000/api';
+
   /// Cho phép truyền URL server thật khi build app:
-  /// flutter build apk --dart-define=API_URL=https://your-domain.com/api
-  /// flutter build web --dart-define=API_URL=https://your-domain.com/api
+  /// flutter build apk --dart-define=API_URL=https://hokinhdoanh-api.onrender.com/api
+  /// flutter build web --dart-define=API_URL=https://hokinhdoanh-api.onrender.com/api
   static const String _envApiUrl = String.fromEnvironment('API_URL', defaultValue: '');
+
+  /// Cho phép người dùng chuyển đổi runtime giữa Live Cloud và Local trong màn hình Cài đặt
+  static String? customBaseUrl;
 
   /// Base URL của Backend NestJS API
   /// Mặc định:
-  /// - Nếu có truyền biến môi trường API_URL -> sử dụng URL đó
-  /// - Windows / macOS / Linux / Web: http://localhost:3000/api
-  /// - Android Emulator: http://10.0.2.2:3000/api
+  /// 1. Nếu có cấu hình customBaseUrl -> dùng customBaseUrl
+  /// 2. Nếu có truyền biến môi trường API_URL -> sử dụng URL đó
+  /// 3. Mặc định: Trỏ trực tiếp đến Live Production API trên Cloud
   static String get baseUrl {
+    if (customBaseUrl != null && customBaseUrl!.trim().isNotEmpty) {
+      return customBaseUrl!.trim();
+    }
     if (_envApiUrl.isNotEmpty) {
       return _envApiUrl;
     }
-    if (kIsWeb) {
-      return 'http://localhost:3000/api';
-    }
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        // 10.0.2.2 trỏ về localhost máy host từ Android Emulator
-        return 'http://10.0.2.2:3000/api';
-      case TargetPlatform.iOS:
-      case TargetPlatform.windows:
-      case TargetPlatform.macOS:
-      case TargetPlatform.linux:
-      default:
-        return 'http://localhost:3000/api';
-    }
+    // Mặc định kết nối trực tiếp Live Production Server
+    return liveProductionUrl;
   }
+
+  /// Trạng thái đang kết nối môi trường Live
+  static bool get isLiveEnvironment =>
+      baseUrl.contains('hokinhdoanh-api.onrender.com') || baseUrl.startsWith('https://');
 
   // Auth Endpoints
   static const String register = '/auth/register';
