@@ -166,6 +166,15 @@ class BusinessController extends ChangeNotifier {
       notifyListeners();
       return null;
     } on ApiException catch (e) {
+      // Trường hợp request trước đó đã tạo xong trên Server nhưng client bị timeout
+      if (e.message.contains('đã được sử dụng') || e.message.contains('đã tồn tại') || e.statusCode == 409) {
+        try {
+          final loginErr = await loginUser(identifier: phone, password: password);
+          if (loginErr == null) {
+            return null; // Đăng nhập tự động thành công!
+          }
+        } catch (_) {}
+      }
       return e.message;
     } catch (_) {
       // 2. Chế độ dự phòng cục bộ khi máy chủ chưa mở hoặc mất mạng

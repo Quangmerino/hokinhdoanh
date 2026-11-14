@@ -42,12 +42,14 @@ class ApiClient {
     return Uri.parse(urlStr);
   }
 
+  static const Duration defaultTimeout = Duration(seconds: 45);
+
   Future<dynamic> get(String endpoint, {Map<String, dynamic>? queryParams}) async {
     try {
       final uri = _buildUri(endpoint, queryParams);
       final response = await _client
           .get(uri, headers: _buildHeaders())
-          .timeout(const Duration(seconds: 10));
+          .timeout(defaultTimeout);
       return _processResponse(response);
     } on SocketException {
       throw const ApiException(
@@ -56,7 +58,7 @@ class ApiClient {
       );
     } on TimeoutException {
       throw const ApiException(
-        message: 'Yêu cầu kết nối quá thời gian chờ (Timeout). Vui lòng thử lại.',
+        message: 'Máy chủ phản hồi quá thời gian chờ (Server đang khởi động sau thời gian nghỉ). Vui lòng thử lại.',
         statusCode: 408,
       );
     } catch (e) {
@@ -74,7 +76,7 @@ class ApiClient {
             headers: _buildHeaders(),
             body: body != null ? jsonEncode(body) : null,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(defaultTimeout);
       return _processResponse(response);
     } on SocketException {
       throw const ApiException(
@@ -83,7 +85,7 @@ class ApiClient {
       );
     } on TimeoutException {
       throw const ApiException(
-        message: 'Yêu cầu quá thời gian chờ. Vui lòng thử lại.',
+        message: 'Máy chủ phản hồi quá thời gian chờ (Server đang khởi động sau thời gian nghỉ). Vui lòng thử lại.',
         statusCode: 408,
       );
     } catch (e) {
@@ -101,7 +103,7 @@ class ApiClient {
             headers: _buildHeaders(),
             body: body != null ? jsonEncode(body) : null,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(defaultTimeout);
       return _processResponse(response);
     } catch (e) {
       if (e is ApiException) rethrow;
@@ -114,7 +116,7 @@ class ApiClient {
       final uri = _buildUri(endpoint);
       final response = await _client
           .delete(uri, headers: _buildHeaders())
-          .timeout(const Duration(seconds: 10));
+          .timeout(defaultTimeout);
       return _processResponse(response);
     } catch (e) {
       if (e is ApiException) rethrow;
