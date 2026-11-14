@@ -25,12 +25,25 @@ void showProductDialog(
         ? CurrencyInputFormatter.format(editProduct.retailPrice)
         : '0',
   );
+  bool enablePackUnit = editProduct != null && editProduct.packUnitName.trim().isNotEmpty;
+  String conversionMode = 'PACK_IS_LARGER';
+  String initialRatioText = '';
+  if (editProduct != null && editProduct.packRate > 0 && editProduct.packUnitName.trim().isNotEmpty) {
+    if (editProduct.packRate < 1.0) {
+      conversionMode = 'BASE_IS_LARGER';
+      final r = (1.0 / editProduct.packRate);
+      initialRatioText = r % 1 == 0 ? r.toInt().toString() : r.toStringAsFixed(2);
+    } else {
+      conversionMode = 'PACK_IS_LARGER';
+      final r = editProduct.packRate;
+      initialRatioText = r % 1 == 0 ? r.toInt().toString() : r.toString();
+    }
+  }
+
   final packNameCtrl = TextEditingController(text: editProduct?.packUnitName ?? '');
-  final packRateCtrl = TextEditingController(
-    text: (editProduct != null && editProduct.packRate > 1) ? editProduct.packRate.toString() : '',
-  );
+  final packRatioCtrl = TextEditingController(text: initialRatioText);
   final packPriceCtrl = TextEditingController(
-    text: (editProduct != null && editProduct.hasPackUnit && editProduct.packPrice > 0)
+    text: (editProduct != null && editProduct.packPrice > 0)
         ? CurrencyInputFormatter.format(editProduct.packPrice)
         : '',
   );
@@ -282,49 +295,135 @@ void showProductDialog(
                   ),
                   const SizedBox(height: 14),
 
-                  // ĐƠN VỊ QUY ĐỔI SỈ (Thùng / Két / Bao)
+                  // ĐƠN VỊ QUY ĐỔI SỈ / PHỤ (Thùng / Lốc / Két / Bao)
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
+                      color: enablePackUnit ? const Color(0xFFF0FDFA) : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: enablePackUnit ? const Color(0xFF0F766E).withOpacity(0.4) : Colors.grey.shade300,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('📦 Bán Sỉ / Quy Đổi Chẵn (Tùy chọn)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: packNameCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Tên đơn vị chẵn',
-                            hintText: 'VD: Thùng, Két, Bao...',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
-                            isDense: true,
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          title: const Row(
+                            children: [
+                              Text('📦 Bán Sỉ / Đơn Vị Quy Đổi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              SizedBox(width: 6),
+                              Text('(Tùy chọn)', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                            ],
                           ),
-                          onChanged: (_) => setDialogState(() {}),
+                          subtitle: const Text(
+                            'Bật nếu mặt hàng có bán sỉ theo Thùng/Két hoặc chia lẻ theo Lốc/Hộp',
+                            style: TextStyle(fontSize: 11, color: Colors.grey),
+                          ),
+                          value: enablePackUnit,
+                          onChanged: (v) {
+                            setDialogState(() {
+                              enablePackUnit = v;
+                              if (!v) {
+                                packNameCtrl.clear();
+                                packRatioCtrl.clear();
+                                packPriceCtrl.clear();
+                              }
+                            });
+                          },
                         ),
-                        if (packNameCtrl.text.trim().isNotEmpty) ...[
-                          const SizedBox(height: 8),
+                        if (enablePackUnit) ...[
+                          const Divider(height: 16),
+                          // 1. Tên đơn vị phụ
+                          TextFormField(
+                            controller: packNameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Tên đơn vị phụ / sỉ *',
+                              hintText: 'VD: Lốc, Thùng, Két, Hộp, Bao...',
+                              prefixIcon: Icon(Icons.all_inbox, size: 20),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                              isDense: true,
+                            ),
+                            validator: (v) {
+                              if (enablePackUnit && (v == null || v.trim().isEmpty)) {
+                                return 'Vui lòng nhập tên đơn vị phụ (hoặc tắt công tắc ở trên)';
+                              }
+                              return null;
+                            },
+                            onChanged: (_) => setDialogState(() {}),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 4,
+                            children: ['Lốc', 'Thùng', 'Két', 'Hộp', 'Bao', 'Vỉ'].map((u) {
+                              return ChoiceChip(
+                                visualDensity: VisualDensity.compact,
+                                label: Text(u, style: const TextStyle(fontSize: 11)),
+                                selected: packNameCtrl.text == u,
+                                onSelected: (_) => setDialogState(() => packNameCtrl.text = u),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // 2. Chiều quy đổi linh hoạt
+                          const Text('Chiều quy đổi tương quan:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          SegmentedButton<String>(
+                            showSelectedIcon: false,
+                            style: const ButtonStyle(
+                              visualDensity: VisualDensity.compact,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            segments: [
+                              ButtonSegment(
+                                value: 'BASE_IS_LARGER',
+                                label: Text(
+                                  '1 ${unitCtrl.text.isEmpty ? "Gốc" : unitCtrl.text} = Nhiều ${packNameCtrl.text.isEmpty ? "Phụ" : packNameCtrl.text}',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                icon: const Icon(Icons.call_split, size: 14),
+                              ),
+                              ButtonSegment(
+                                value: 'PACK_IS_LARGER',
+                                label: Text(
+                                  '1 ${packNameCtrl.text.isEmpty ? "Phụ" : packNameCtrl.text} = Nhiều ${unitCtrl.text.isEmpty ? "Gốc" : unitCtrl.text}',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                icon: const Icon(Icons.call_merge, size: 14),
+                              ),
+                            ],
+                            selected: {conversionMode},
+                            onSelectionChanged: (val) => setDialogState(() => conversionMode = val.first),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // 3. Số lượng quy đổi & Giá bán
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
                                 child: TextFormField(
-                                  controller: packRateCtrl,
-                                  keyboardType: TextInputType.number,
+                                  controller: packRatioCtrl,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   decoration: InputDecoration(
-                                    labelText: 'Quy đổi (1 ${packNameCtrl.text} = ? ${unitCtrl.text})',
+                                    labelText: conversionMode == 'BASE_IS_LARGER'
+                                        ? '1 ${unitCtrl.text.isEmpty ? "Gốc" : unitCtrl.text} = ? ${packNameCtrl.text.isEmpty ? "Phụ" : packNameCtrl.text} *'
+                                        : '1 ${packNameCtrl.text.isEmpty ? "Phụ" : packNameCtrl.text} = ? ${unitCtrl.text.isEmpty ? "Gốc" : unitCtrl.text} *',
+                                    hintText: conversionMode == 'BASE_IS_LARGER' ? 'VD: 4' : 'VD: 24',
                                     border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
                                     isDense: true,
                                   ),
                                   validator: (v) {
-                                    if (packNameCtrl.text.trim().isNotEmpty) {
-                                      final r = double.tryParse(v ?? '');
-                                      if (r == null || r <= 1) return 'Cần hệ số > 1';
+                                    if (enablePackUnit) {
+                                      final r = double.tryParse((v ?? '').trim().replaceAll(',', '.'));
+                                      if (r == null || r <= 0) return 'Cần số > 0';
                                     }
                                     return null;
                                   },
+                                  onChanged: (_) => setDialogState(() {}),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -336,16 +435,52 @@ void showProductDialog(
                                     FilteringTextInputFormatter.digitsOnly,
                                     CurrencyInputFormatter(),
                                   ],
-                                  decoration: const InputDecoration(
-                                    labelText: 'Giá bán chẵn',
+                                  decoration: InputDecoration(
+                                    labelText: 'Giá bán ${packNameCtrl.text.isEmpty ? "ĐV phụ" : packNameCtrl.text} *',
                                     suffixText: 'VNĐ',
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+                                    border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
                                     isDense: true,
                                   ),
+                                  validator: (v) {
+                                    if (enablePackUnit) {
+                                      return Validators.positiveCurrency(v, 'Cần nhập giá bán');
+                                    }
+                                    return null;
+                                  },
                                 ),
                               ),
                             ],
                           ),
+
+                          // 4. Giải thích trực quan
+                          if (packRatioCtrl.text.isNotEmpty && double.tryParse(packRatioCtrl.text.trim().replaceAll(',', '.')) != null) ...[
+                            const SizedBox(height: 8),
+                            Builder(builder: (ctx) {
+                              final ratio = double.tryParse(packRatioCtrl.text.trim().replaceAll(',', '.')) ?? 1.0;
+                              final bUnit = unitCtrl.text.isEmpty ? 'ĐV gốc' : unitCtrl.text;
+                              final pUnit = packNameCtrl.text.isEmpty ? 'ĐV phụ' : packNameCtrl.text;
+                              String formulaExplanation;
+                              if (conversionMode == 'BASE_IS_LARGER') {
+                                final deduction = ratio > 0 ? (1.0 / ratio) : 1.0;
+                                final cleanDeduction = deduction.toStringAsFixed(deduction.truncateToDouble() == deduction ? 0 : 3);
+                                formulaExplanation = '💡 1 $bUnit = ${ratio % 1 == 0 ? ratio.toInt() : ratio} $pUnit. Bán 1 $pUnit sẽ trừ $cleanDeduction $bUnit trong kho.';
+                              } else {
+                                formulaExplanation = '💡 1 $pUnit = ${ratio % 1 == 0 ? ratio.toInt() : ratio} $bUnit. Bán 1 $pUnit sẽ trừ ${ratio % 1 == 0 ? ratio.toInt() : ratio} $bUnit trong kho.';
+                              }
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.blue.shade200),
+                                ),
+                                child: Text(
+                                  formulaExplanation,
+                                  style: TextStyle(fontSize: 11, color: Colors.blue.shade900, fontWeight: FontWeight.w500),
+                                ),
+                              );
+                            }),
+                          ],
                         ],
                       ],
                     ),
@@ -381,6 +516,24 @@ void showProductDialog(
               icon: const Icon(Icons.check, size: 18),
               onPressed: () {
                 if (!formKey.currentState!.validate()) return;
+
+                double calculatedPackRate = 1.0;
+                String resolvedPackName = '';
+                int resolvedPackPrice = 0;
+
+                if (enablePackUnit && packNameCtrl.text.trim().isNotEmpty) {
+                  resolvedPackName = packNameCtrl.text.trim();
+                  resolvedPackPrice = AppFormatters.parseVnd(packPriceCtrl.text);
+                  final inputRatio = double.tryParse(packRatioCtrl.text.trim().replaceAll(',', '.')) ?? 1.0;
+                  if (conversionMode == 'BASE_IS_LARGER') {
+                    // 1 [Đơn vị gốc] = [inputRatio] [Đơn vị phụ] (VD: 1 Thùng = 4 Lốc -> Bán 1 Lốc trừ 0.25 Thùng)
+                    calculatedPackRate = inputRatio > 0 ? (1.0 / inputRatio) : 1.0;
+                  } else {
+                    // 1 [Đơn vị phụ] = [inputRatio] [Đơn vị gốc] (VD: 1 Thùng = 24 Lon -> Bán 1 Thùng trừ 24 Lon)
+                    calculatedPackRate = inputRatio > 0 ? inputRatio : 1.0;
+                  }
+                }
+
                 ctrl.saveProduct(
                   editId: editProduct?.id,
                   name: nameCtrl.text.trim(),
@@ -392,9 +545,9 @@ void showProductDialog(
                   stockQty: double.tryParse(stockCtrl.text.trim().replaceAll(',', '.')) ?? 0,
                   costPrice: AppFormatters.parseVnd(costCtrl.text),
                   retailPrice: AppFormatters.parseVnd(retailCtrl.text),
-                  packUnitName: packNameCtrl.text.trim(),
-                  packRate: double.tryParse(packRateCtrl.text.trim().replaceAll(',', '.')) ?? 1,
-                  packPrice: AppFormatters.parseVnd(packPriceCtrl.text),
+                  packUnitName: resolvedPackName,
+                  packRate: calculatedPackRate,
+                  packPrice: resolvedPackPrice,
                   trackReturnableShell: trackShell,
                   specNote: noteCtrl.text.trim(),
                 );

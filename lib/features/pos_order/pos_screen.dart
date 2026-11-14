@@ -197,7 +197,11 @@ class _PosOrderScreenState extends State<PosOrderScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   ChoiceChip(
-                                    label: Text('${p.packUnitName} (x${p.packRate} ${p.baseUnit})'),
+                                    label: Text(
+                                      p.packRate >= 1.0
+                                          ? '${p.packUnitName} (x${p.packRate % 1 == 0 ? p.packRate.toInt() : p.packRate} ${p.baseUnit})'
+                                          : '${p.packUnitName} (1 ${p.baseUnit} = ${(1.0 / p.packRate).round()} ${p.packUnitName})',
+                                    ),
                                     selected: item.usePackUnit,
                                     onSelected: (_) {
                                       ctrl.updateCartItem(idx, usePackUnit: true);

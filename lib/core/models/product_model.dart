@@ -39,16 +39,21 @@ class ProductModel {
     this.imagePath,
   });
 
-  bool get hasPackUnit => packUnitName.trim().isNotEmpty && packRate > 1;
+  bool get hasPackUnit => packUnitName.trim().isNotEmpty && packRate > 0;
 
   String get formattedStock {
-    if (hasPackUnit) {
-      final fullPacks = (stockQty / packRate).floor();
-      final rem = double.parse((stockQty % packRate).toStringAsFixed(1));
-      if (rem > 0) {
-        return '$stockQty $baseUnit ($fullPacks $packUnitName + $rem $baseUnit)';
+    if (hasPackUnit && packRate != 1.0) {
+      if (packRate > 1.0) {
+        final fullPacks = (stockQty / packRate).floor();
+        final rem = double.parse((stockQty % packRate).toStringAsFixed(1));
+        if (rem > 0) {
+          return '$stockQty $baseUnit ($fullPacks $packUnitName + $rem $baseUnit)';
+        }
+        return '$stockQty $baseUnit ($fullPacks $packUnitName)';
+      } else {
+        final totalSubUnits = (stockQty / packRate).round();
+        return '$stockQty $baseUnit (~$totalSubUnits $packUnitName)';
       }
-      return '$stockQty $baseUnit ($fullPacks $packUnitName)';
     }
     return '$stockQty $baseUnit';
   }
